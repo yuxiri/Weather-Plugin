@@ -120,6 +120,7 @@ export class WeatherPanel extends plugin {
       name: '天气图片', dsc: '天气查询、订阅与每日图片推送', event: 'message', priority: 5000,
       rule: [
         { reg: '^#?天气帮助$', fnc: 'help' },
+        { reg: '^#?天气设置帮助$', fnc: 'settingsHelp' },
         { reg: '^#?(?:设置天气API|添加天气API)(?:\\s+.+)?$', fnc: 'weatherApi' },
         { reg: '^#?(?:绑定城市|默认城市)(?:\\s+.+)?$', fnc: 'bindCity' },
         { reg: '^#?解绑城市$', fnc: 'unbindCity' },
@@ -127,7 +128,7 @@ export class WeatherPanel extends plugin {
         { reg: '^#?(?:24小时预报|逐小时天气)(?:\\s+.+)?$', fnc: 'hourlyForecast' },
         { reg: '^#?天气对比(?:\\s+.+)?$', fnc: 'compareCities' },
         { reg: '^#?天气主题(?:\\s+.+)?$', fnc: 'theme' },
-        { reg: '^#?天气预警$', fnc: 'precipitationAlerts' },
+        { reg: '^#?天气提醒$', fnc: 'precipitationAlerts' },
         { reg: '^#?(?:开启降雨提醒|关闭降雨提醒|开启降雪提醒|关闭降雪提醒)$', fnc: 'precipitationAlerts' },
         { reg: '^#?(?:天气早报|设置天气早报|关闭天气早报)(?:\\s+.+)?$', fnc: 'morningReport' },
         { reg: '^#?(?:天气晚报|设置天气晚报|关闭天气晚报)(?:\\s+.+)?$', fnc: 'eveningReport' },
@@ -143,24 +144,32 @@ export class WeatherPanel extends plugin {
 
   async help(e) {
     return sendInfo(e, '天气插件帮助', [
-      '#天气 北京　查询城市天气',
-      '#查询天气 东京　也可查询任意城市',
-      '#天气 东京,JP　可指定国家代码，避免同名城市',
-      '#绑定城市 重庆　设置默认城市；#解绑城市　解除绑定',
+      '常用功能',
+      '#天气 北京 / #查询天气 东京　查询指定城市天气',
+      '#绑定城市 重庆 / #解绑城市　设置或解除默认城市',
       '#生活指数　查看出行、穿衣、防晒建议',
       '#24小时预报　查看未来逐小时天气',
       '#天气对比 重庆/北京/上海　对比多个城市',
-      '#天气主题 ocean/sunset/night　切换卡片主题',
-      '#开启降雨提醒 / #开启降雪提醒　启用预警',
-      '#设置天气早报 07:00 / #设置天气晚报 20:00',
+      '#天气提醒 / #开启降雨提醒 / #开启降雪提醒　查询或开启天气提醒',
+      '#订阅天气 北京 07:30 / #取消天气订阅　每日推送或取消',
       '自然语言示例：重庆明天会下雨吗',
-      '#订阅天气 北京 07:30　每日按该城市当地时间推送',
+      '其他设置',
+      '#天气主题 ocean/sunset/night　切换卡片主题',
+      '#天气设置帮助　查看数据源、早晚报和 API 设置',
+    ]);
+  }
+
+  async settingsHelp(e) {
+    return sendInfo(e, '天气设置帮助', [
       '#天气源　查看当前天气数据源',
-      '#切换天气源 <open-meteo/bing/weatherapi>　选择一种数据源（仅机器人主人）',
-      '私聊 #设置天气API <API Key>　添加 WeatherAPI 密钥（仅机器人主人）',
-      '#天气订阅　查看当前会话订阅',
-      '#取消天气订阅　关闭当前会话推送',
-      '不写时间默认 07:00；群订阅由管理员设置。',
+      '#切换天气源 open-meteo/bing/weatherapi　切换全局数据源（仅机器人主人）',
+      '私聊 #设置天气API <API Key>　配置 WeatherAPI（仅机器人主人）',
+      '#设置天气早报 07:00 / #设置天气晚报 20:00　设置每日简报时间',
+      '#关闭天气早报 / #关闭天气晚报　关闭对应简报',
+      '#天气提醒　查看降雨、降雪提醒状态',
+      '#开启降雨提醒 / #开启降雪提醒　开启天气提醒',
+      '#关闭降雨提醒 / #关闭降雪提醒　关闭对应天气提醒',
+      '群内修改默认城市、主题、简报和提醒需群管理员权限。',
     ]);
   }
 
@@ -272,7 +281,7 @@ export class WeatherPanel extends plugin {
     const command = e.msg.replace(/^#?/, '');
     try {
       const preferences = await preferencesStore.get(target);
-      if (command === '天气预警') return sendInfo(e, '降水提醒设置', [
+      if (command === '天气提醒') return sendInfo(e, '天气提醒设置', [
         `降雨提醒：${preferences.rainAlerts ? '开启' : '关闭'}`,
         `降雪提醒：${preferences.snowAlerts ? '开启' : '关闭'}`,
         '使用 #开启降雨提醒、#开启降雪提醒 开启；关闭时使用对应的 #关闭 指令。',
@@ -285,7 +294,7 @@ export class WeatherPanel extends plugin {
       const enabled = match[1] === '开启';
       await preferencesStore.set(target, { [key]: enabled });
       return sendInfo(e, enabled ? `${match[2]}提醒已开启` : `${match[2]}提醒已关闭`, [
-        enabled ? '将检查未来24小时预报，并在达到预警条件时发送提醒。' : '之后不会再发送此类天气提醒。',
+        enabled ? '将检查未来24小时预报，并在预报显示可能降水时发送天气提醒。' : '之后不会再发送此类天气提醒。',
       ]);
     } catch (error) { return sendError(e, error); }
   }
