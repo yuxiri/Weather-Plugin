@@ -1,16 +1,16 @@
-# TRSS-Yunzai 天气图片插件
+## Yunzai 天气插件
 
-本插件由 GPTcodex 生成，适用于 TRSS-Yunzai。天气查询、帮助、订阅反馈和每日推送均以图片发送。
+本插件由 GPT生成
 
 ## 安装
 
-在 TRSS-Yunzai 根目录执行：
+在 Yunzai 根目录执行：
 
 ```bash
-git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/trss-weather-plugin
+git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-plugin
 ```
 
-确认 TRSS-Yunzai 的图片渲染器可用，并能访问 Open-Meteo 天气接口。然后重启 TRSS-Yunzai 即可，无需为插件单独安装 npm 依赖。
+确认图片渲染器可用，并能访问 Open-Meteo 天气接口。然后重启即可，无需为插件单独安装 npm 依赖。
 
 ## 指令
 
@@ -41,4 +41,4 @@ git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/trss-wea
 - `lib/weather.js`：城市解析、天气请求和数据整理。
 - `lib/subscriptions.js`：订阅数据读写。
 - `resources/weather.html`：天气图片模板。
-- `resources/info.html`：帮助与操作结果图片模板。
+- `resources/info.html`：结果图片模板。
