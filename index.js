@@ -73,6 +73,7 @@ export class WeatherPanel extends plugin {
       name: '天气图片', dsc: '天气查询、订阅与每日图片推送', event: 'message', priority: 5000,
       rule: [
         { reg: '^#?天气帮助$', fnc: 'help' },
+        { reg: '^#?(?:设置天气API|添加天气API)(?:\\s+.+)?$', fnc: 'weatherApi' },
         { reg: '^#?(?:天气源|天气数据源|切换天气源|切换数据源)(?:\\s+.+)?$', fnc: 'source' },
         { reg: '^#?(?:取消天气订阅|退订天气)$', fnc: 'unsubscribe' },
         { reg: '^#?(?:订阅天气|天气订阅)(?:\\s+.+)?$', fnc: 'subscribe' },
@@ -92,6 +93,7 @@ export class WeatherPanel extends plugin {
       '#切换天气源 Open-Meteo　切换数据源（仅机器人主人可操作）',
       '#切换天气源 WeatherAPI　需先配置 API Key',
       '#切换天气源 Bing　从 Bing 搜索定位并读取 MSN 天气预报',
+      '私聊 #设置天气API <API Key>　添加 WeatherAPI 密钥（仅机器人主人）',
       '#天气订阅　查看当前会话订阅',
       '#取消天气订阅　关闭当前会话推送',
       '不写时间默认 07:00；群订阅由管理员设置。',
@@ -140,6 +142,33 @@ export class WeatherPanel extends plugin {
       await settingsStore.setSource(source);
       const selectedName = sourceName(source);
       return sendInfo(e, '天气数据源已切换', [`当前来源：${selectedName}`, '天气查询和每日推送都会使用该来源。']);
+    } catch (error) { return sendError(e, error); }
+  }
+
+  async weatherApi(e) {
+    if (e.isGroup) return sendInfo(e, '请私聊设置天气 API', [
+      '为避免密钥出现在群聊，请私聊机器人发送 #设置天气API <API Key>。',
+      '群聊中的设置命令不会保存密钥。',
+    ]);
+    if (!e.isMaster) return sendInfo(e, '没有设置权限', ['WeatherAPI 密钥属于全局配置，仅机器人主人可以设置。']);
+
+    const apiKey = e.msg.replace(/^#?(?:设置天气API|添加天气API)/, '').trim();
+    if (!apiKey) {
+      const current = await settingsStore.get();
+      return sendInfo(e, 'WeatherAPI 密钥设置', [
+        `当前状态：${current.weatherApiKey ? '已配置' : '未配置'}`,
+        '私聊发送 #设置天气API <API Key> 保存密钥。',
+        '保存后发送 #切换天气源 WeatherAPI 使用该来源。',
+      ]);
+    }
+
+    try {
+      await settingsStore.setWeatherApiKey(apiKey);
+      return sendInfo(e, 'WeatherAPI 密钥已保存', [
+        '密钥已写入 Yunzai 根目录 data/weather-panel/settings.json。',
+        '为保护密钥，回执不会显示密钥内容。',
+        '发送 #切换天气源 WeatherAPI 即可使用。',
+      ]);
     } catch (error) { return sendError(e, error); }
   }
 

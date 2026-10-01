@@ -24,6 +24,7 @@ git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-
 | `#切换天气源 Open-Meteo` | 切换到 Open-Meteo |
 | `#切换天气源 WeatherAPI` | 切换到 WeatherAPI.com |
 | `#切换天气源 Bing` | 从 Bing 搜索定位并读取 MSN 天气预报 |
+| 私聊 `#设置天气API <API Key>` | 设置 WeatherAPI 密钥（仅机器人主人） |
 | `#订阅天气 北京 07:30` | 每天按北京当地时间 07:30 推送天气图片 |
 | `#订阅天气 北京` | 默认每天当地时间 07:00 推送 |
 | `#天气订阅` | 查看当前会话的订阅 |
@@ -40,7 +41,7 @@ git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-
 
 ### 配置 WeatherAPI
 
-Open-Meteo 默认可用，无需 API Key。使用 WeatherAPI.com 前，先在 [WeatherAPI.com](https://www.weatherapi.com/signup.aspx) 申请 API Key，再通过环境变量 `WEATHERAPI_KEY` 配置，或在 Yunzai 根目录的 `data/weather-panel/settings.json` 中填写：
+Bing 天气（MSN）为默认数据源，无需 API Key。使用 WeatherAPI.com 前，先在 [WeatherAPI.com](https://www.weatherapi.com/signup.aspx) 申请 API Key。机器人主人可私聊机器人发送 `#设置天气API <API Key>` 保存密钥；插件会将密钥写入 Yunzai 根目录的 `data/weather-panel/settings.json`，回执不会显示密钥，群聊中的设置命令不会保存密钥。也可通过环境变量 `WEATHERAPI_KEY` 配置，或手动在 `data/weather-panel/settings.json` 中填写：
 
 ```json
 {
@@ -49,7 +50,7 @@ Open-Meteo 默认可用，无需 API Key。使用 WeatherAPI.com 前，先在 [W
 }
 ```
 
-之后发送 `#切换天气源 WeatherAPI`。不要在聊天指令中发送 API Key。Bing 天气（MSN）为默认来源，Open-Meteo 与 WeatherAPI 也可手动切换；城市名称和坐标仍由 Open-Meteo 地理编码接口解析。
+密钥保存后发送 `#切换天气源 WeatherAPI` 即可使用该来源。Open-Meteo 也可手动切换；城市名称和坐标仍由 Open-Meteo 地理编码接口解析。
 
 ## 数据说明
 
