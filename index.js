@@ -4,14 +4,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getWeather, localDateTime, resolveCity } from './lib/weather.js';
 import { SubscriptionStore, subscriptionKey } from './lib/subscriptions.js';
+import { WeatherSettingsStore } from './lib/settings.js';
 import { weatherView } from './lib/view.js';
 
 const store = new SubscriptionStore();
+const settingsStore = new WeatherSettingsStore();
 const root = fileURLToPath(new URL('./resources/', import.meta.url));
 const chat = e => ({ botId: String(e.self_id), type: e.isGroup ? 'group' : 'private', targetId: String(e.isGroup ? e.group_id : e.user_id) });
 
-async function imageOfWeather(location) {
-  const data = await getWeather(location);
+async function imageOfWeather(location, weatherSettings = null) {
+  const selectedSettings = weatherSettings || await settingsStore.get();
+  const data = await getWeather(location, fetch, selectedSettings);
   const image = await renderer.render('yunzai-weather-plugin', {
     saveId: 'weather', tplFile: path.join(root, 'weather.html'), ...weatherView(data), imgType: 'png',
   });
@@ -70,6 +73,7 @@ export class WeatherPanel extends plugin {
       name: '天气图片', dsc: '天气查询、订阅与每日图片推送', event: 'message', priority: 5000,
       rule: [
         { reg: '^#?天气帮助$', fnc: 'help' },
+        { reg: '^#?(?:天气源|天气数据源|切换天气源|切换数据源)(?:\\s+.+)?$', fnc: 'source' },
         { reg: '^#?(?:取消天气订阅|退订天气)$', fnc: 'unsubscribe' },
         { reg: '^#?(?:订阅天气|天气订阅)(?:\\s+.+)?$', fnc: 'subscribe' },
         { reg: '^#?(?:天气|查询天气)(?:\\s+.+)?$', fnc: 'query' },
@@ -84,6 +88,9 @@ export class WeatherPanel extends plugin {
       '#查询天气 东京　也可查询任意城市',
       '#天气 东京,JP　可指定国家代码，避免同名城市',
       '#订阅天气 北京 07:30　每日按该城市当地时间推送',
+      '#天气源　查看当前天气数据源',
+      '#切换天气源 Open-Meteo　切换数据源（仅机器人主人可操作）',
+      '#切换天气源 WeatherAPI　需先配置 API Key',
       '#天气订阅　查看当前会话订阅',
       '#取消天气订阅　关闭当前会话推送',
       '不写时间默认 07:00；群订阅由管理员设置。',
@@ -96,6 +103,40 @@ export class WeatherPanel extends plugin {
       const location = arg ? await resolveCity(arg) : (await store.get(subscriptionKey(chat(e))))?.location;
       if (!location) return this.help(e);
       return await e.reply(segment.image(await imageOfWeather(location)));
+    } catch (error) { return sendError(e, error); }
+  }
+
+  async source(e) {
+    const arg = e.msg.replace(/^#?(?:切换天气源|切换数据源|天气数据源|天气源)/, '').trim();
+    try {
+      const current = await settingsStore.get();
+      const currentName = current.source === 'weatherapi' ? 'WeatherAPI.com' : 'Open-Meteo';
+      if (!arg) {
+        return sendInfo(e, '天气数据源', [
+          `当前来源：${currentName}`,
+          `WeatherAPI 密钥：${current.weatherApiKey ? '已配置' : '未配置'}`,
+          '可选来源：Open-Meteo、WeatherAPI',
+          '切换示例：#切换天气源 Open-Meteo',
+          '全局来源只允许机器人主人修改。',
+        ]);
+      }
+      if (!e.isMaster) return sendInfo(e, '没有切换权限', ['天气数据源是全局设置，仅机器人主人可以切换。']);
+
+      const key = arg.toLowerCase().replace(/[\s_]/g, '');
+      const source = ['open-meteo', 'openmeteo', 'open-meteo.com', 'openmeteo.com'].includes(key)
+        ? 'open-meteo'
+        : ['weatherapi', 'weatherapi.com'].includes(key) ? 'weatherapi' : null;
+      if (!source) return sendInfo(e, '数据源名称无效', ['请使用 #切换天气源 Open-Meteo 或 #切换天气源 WeatherAPI。']);
+      if (source === 'weatherapi' && !current.weatherApiKey) {
+        return sendInfo(e, '尚未配置 WeatherAPI 密钥', [
+          '先申请 WeatherAPI API Key：https://www.weatherapi.com/signup.aspx',
+          '然后设置环境变量 WEATHERAPI_KEY，或在 Yunzai 根目录 data/weather-panel/settings.json 中填写 weatherApiKey。',
+          '密钥配置后再发送 #切换天气源 WeatherAPI。',
+        ]);
+      }
+      await settingsStore.setSource(source);
+      const selectedName = source === 'weatherapi' ? 'WeatherAPI.com' : 'Open-Meteo';
+      return sendInfo(e, '天气数据源已切换', [`当前来源：${selectedName}`, '天气查询和每日推送都会使用该来源。']);
     } catch (error) { return sendError(e, error); }
   }
 
@@ -131,6 +172,7 @@ export class WeatherPanel extends plugin {
     try {
       const subs = await store.all();
       const cache = new Map();
+      const weatherSettings = await settingsStore.get();
       for (const sub of subs) {
         try {
           if (!Bot.bots?.[sub.botId]) continue;
@@ -138,8 +180,8 @@ export class WeatherPanel extends plugin {
           const currentMinutes = Number(local.time.slice(0, 2)) * 60 + Number(local.time.slice(3));
           const dueMinutes = Number(sub.time.slice(0, 2)) * 60 + Number(sub.time.slice(3));
           if (currentMinutes < dueMinutes || currentMinutes >= dueMinutes + 60 || sub.lastSentDate === local.date) continue;
-          const locationKey = `${sub.location.latitude}:${sub.location.longitude}:${local.date}`;
-          if (!cache.has(locationKey)) cache.set(locationKey, imageOfWeather(sub.location));
+          const locationKey = `${weatherSettings.source}:${sub.location.latitude}:${sub.location.longitude}:${local.date}`;
+          if (!cache.has(locationKey)) cache.set(locationKey, imageOfWeather(sub.location, weatherSettings));
           const image = segment.image(await cache.get(locationKey));
           const result = sub.type === 'group'
             ? await Bot.sendGroupMsg(sub.botId, sub.targetId, image)
@@ -152,3 +194,4 @@ export class WeatherPanel extends plugin {
     finally { WeatherPanel.pushing = false; }
   }
 }
+
