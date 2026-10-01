@@ -21,9 +21,7 @@ git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-
 | `#查询天气 东京` | 查询指定城市天气 |
 | `#天气 东京,JP` | 用国家代码区分同名城市 |
 | `#天气源` | 查看当前天气数据源 |
-| `#切换天气源 Open-Meteo` | 切换到 Open-Meteo |
-| `#切换天气源 WeatherAPI` | 切换到 WeatherAPI.com |
-| `#切换天气源 Bing` | 从 Bing 搜索定位并读取 MSN 天气预报 |
+| `#切换天气源 <open-meteo/bing/weatherapi>` | 选择一种数据源，例如 `#切换天气源 bing`（仅机器人主人） |
 | 私聊 `#设置天气API <API Key>` | 设置 WeatherAPI 密钥（仅机器人主人） |
 | `#订阅天气 北京 07:30` | 每天按北京当地时间 07:30 推送天气图片 |
 | `#订阅天气 北京` | 默认每天当地时间 07:00 推送 |

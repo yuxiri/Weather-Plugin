@@ -90,9 +90,7 @@ export class WeatherPanel extends plugin {
       '#天气 东京,JP　可指定国家代码，避免同名城市',
       '#订阅天气 北京 07:30　每日按该城市当地时间推送',
       '#天气源　查看当前天气数据源',
-      '#切换天气源 Open-Meteo　切换数据源（仅机器人主人可操作）',
-      '#切换天气源 WeatherAPI　需先配置 API Key',
-      '#切换天气源 Bing　从 Bing 搜索定位并读取 MSN 天气预报',
+      '#切换天气源 <open-meteo/bing/weatherapi>　选择一种数据源（仅机器人主人）',
       '私聊 #设置天气API <API Key>　添加 WeatherAPI 密钥（仅机器人主人）',
       '#天气订阅　查看当前会话订阅',
       '#取消天气订阅　关闭当前会话推送',
@@ -120,7 +118,7 @@ export class WeatherPanel extends plugin {
           `当前来源：${currentName}`,
           `WeatherAPI 密钥：${current.weatherApiKey ? '已配置' : '未配置'}`,
           '可选来源：Open-Meteo、WeatherAPI、Bing 天气（MSN）',
-          '切换示例：#切换天气源 Open-Meteo',
+          '可选值：open-meteo / bing / weatherapi；例如 #切换天气源 bing',
           '全局来源只允许机器人主人修改。',
         ]);
       }

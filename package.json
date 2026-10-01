@@ -1,6 +1,6 @@
 {
   "name": "yunzai-weather-plugin",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "private": true,
   "type": "module",
   "description": "Yunzai 天气图片查询、多数据源与每日订阅推送",
