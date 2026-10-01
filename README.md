@@ -4,7 +4,15 @@
 
 ## 安装
 
-在 Yunzai 根目录执行：
+在 Yunzai 根目录执行以下命令之一：
+
+从 Gitee 安装：
+
+```bash
+git clone https://gitee.com/cloud-star-dot/Yunzai-Weather-Plugin.git ./plugins/weather-plugin
+```
+
+从 GitHub 安装：
 
 ```bash
 git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-plugin
@@ -80,3 +88,4 @@ Bing 天气（MSN）为默认数据源，无需 API Key。使用 WeatherAPI.com 
 - `lib/preferences.js`：默认城市、预警、早晚报和主题设置。
 - `resources/weather.html`：天气图片模板。
 - `resources/info.html`：结果图片模板。
+
