@@ -91,6 +91,7 @@ export class WeatherPanel extends plugin {
       '#天气源　查看当前天气数据源',
       '#切换天气源 Open-Meteo　切换数据源（仅机器人主人可操作）',
       '#切换天气源 WeatherAPI　需先配置 API Key',
+      '#切换天气源 Bing　从 Bing 搜索定位并读取 MSN 天气预报',
       '#天气订阅　查看当前会话订阅',
       '#取消天气订阅　关闭当前会话推送',
       '不写时间默认 07:00；群订阅由管理员设置。',
@@ -110,12 +111,13 @@ export class WeatherPanel extends plugin {
     const arg = e.msg.replace(/^#?(?:切换天气源|切换数据源|天气数据源|天气源)/, '').trim();
     try {
       const current = await settingsStore.get();
-      const currentName = current.source === 'weatherapi' ? 'WeatherAPI.com' : 'Open-Meteo';
+      const sourceName = source => source === 'weatherapi' ? 'WeatherAPI.com' : source === 'bing' ? 'Bing 天气（MSN）' : 'Open-Meteo';
+      const currentName = sourceName(current.source);
       if (!arg) {
         return sendInfo(e, '天气数据源', [
           `当前来源：${currentName}`,
           `WeatherAPI 密钥：${current.weatherApiKey ? '已配置' : '未配置'}`,
-          '可选来源：Open-Meteo、WeatherAPI',
+          '可选来源：Open-Meteo、WeatherAPI、Bing 天气（MSN）',
           '切换示例：#切换天气源 Open-Meteo',
           '全局来源只允许机器人主人修改。',
         ]);
@@ -125,8 +127,9 @@ export class WeatherPanel extends plugin {
       const key = arg.toLowerCase().replace(/[\s_]/g, '');
       const source = ['open-meteo', 'openmeteo', 'open-meteo.com', 'openmeteo.com'].includes(key)
         ? 'open-meteo'
-        : ['weatherapi', 'weatherapi.com'].includes(key) ? 'weatherapi' : null;
-      if (!source) return sendInfo(e, '数据源名称无效', ['请使用 #切换天气源 Open-Meteo 或 #切换天气源 WeatherAPI。']);
+        : ['weatherapi', 'weatherapi.com'].includes(key) ? 'weatherapi'
+          : ['bing', 'bing天气', 'bingweather', 'msn', 'msn天气', 'msnweather'].includes(key) ? 'bing' : null;
+      if (!source) return sendInfo(e, '数据源名称无效', ['请使用 #切换天气源 Open-Meteo、WeatherAPI 或 Bing。']);
       if (source === 'weatherapi' && !current.weatherApiKey) {
         return sendInfo(e, '尚未配置 WeatherAPI 密钥', [
           '先申请 WeatherAPI API Key：https://www.weatherapi.com/signup.aspx',
@@ -135,7 +138,7 @@ export class WeatherPanel extends plugin {
         ]);
       }
       await settingsStore.setSource(source);
-      const selectedName = source === 'weatherapi' ? 'WeatherAPI.com' : 'Open-Meteo';
+      const selectedName = sourceName(source);
       return sendInfo(e, '天气数据源已切换', [`当前来源：${selectedName}`, '天气查询和每日推送都会使用该来源。']);
     } catch (error) { return sendError(e, error); }
   }

@@ -10,7 +10,7 @@
 git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-plugin
 ```
 
-确认图片渲染器可用，并能访问 Open-Meteo 天气接口。然后重启即可，无需为插件单独安装 npm 依赖。
+确认图片渲染器可用，并能访问所选天气数据源。然后重启即可，无需为插件单独安装 npm 依赖。
 
 ## 指令
 
@@ -23,6 +23,7 @@ git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-
 | `#天气源` | 查看当前天气数据源 |
 | `#切换天气源 Open-Meteo` | 切换到 Open-Meteo |
 | `#切换天气源 WeatherAPI` | 切换到 WeatherAPI.com |
+| `#切换天气源 Bing` | 从 Bing 搜索定位并读取 MSN 天气预报 |
 | `#订阅天气 北京 07:30` | 每天按北京当地时间 07:30 推送天气图片 |
 | `#订阅天气 北京` | 默认每天当地时间 07:00 推送 |
 | `#天气订阅` | 查看当前会话的订阅 |
@@ -32,6 +33,10 @@ git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-
 每个群或私聊最多保留一个订阅。群订阅需要群主、管理员或机器人主人设置；推送使用订阅时对应的机器人账号。
 
 数据源为全局设置，只能由机器人主人切换。切换后天气查询和每日推送都会使用所选来源；天气卡片底部会标注来源。
+
+### 使用 Bing 天气
+
+发送 `#切换天气源 Bing` 后，插件会先用城市名查询 Bing 搜索结果，再读取对应的 MSN 天气预报页面，并使用页面提供的当前天气、逐小时天气和多日预报生成图片。该来源无需 API Key；Yunzai 所在服务器需要能够访问 Bing 和 MSN 天气页面。
 
 ### 配置 WeatherAPI
 
@@ -48,7 +53,7 @@ Open-Meteo 默认可用，无需 API Key。使用 WeatherAPI.com 前，先在 [W
 
 ## 数据说明
 
-- 天气预报源可选 [Open-Meteo](https://open-meteo.com/en/docs) 或 [WeatherAPI.com](https://www.weatherapi.com/docs/)。
+- 天气预报源可选 [Open-Meteo](https://open-meteo.com/en/docs)、[WeatherAPI.com](https://www.weatherapi.com/docs/) 或 [Bing 天气（MSN）](https://www.msn.cn/zh-cn/weather/forecast/in-%E5%8C%97%E4%BA%AC%E5%B8%82)。
 - 城市地理编码使用 [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api)。
 - 空气质量数据由当前所选天气源提供；接口暂不可用时，天气图片仍可生成，并显示“未提供”。
 - 城市可写作 `城市,国家代码`，例如 `东京,JP`、`巴黎,FR`。北京、东京、洛杉矶的常见中文名已内置识别。
