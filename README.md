@@ -1,44 +1,44 @@
 # TRSS-Yunzai 天气图片插件
 
-沿用本次制作的天气卡片：主卡展示当前、逐日和逐小时天气，其他指标以文字卡片显示在下方。帮助、查询、订阅反馈及每日推送均发送图片。
+本插件由 GPTcodex 生成，适用于 TRSS-Yunzai。天气查询、帮助、订阅反馈和每日推送均以图片发送。
 
 ## 安装
 
-1. 把整个 `trss-weather-plugin` 目录放入 TRSS-Yunzai 根目录下的 `plugins/`。最终路径应为 `plugins/trss-weather-plugin/index.js`。
-2. 确保 TRSS-Yunzai 的图片渲染器可用，且运行环境能访问 Open-Meteo 的天气、地理编码和空气质量接口。
-3. 重启 TRSS-Yunzai。不需要额外安装 npm 包；插件使用 Yunzai 自带的 `oicq` 和渲染器。
+在 TRSS-Yunzai 根目录执行：
 
-如果之前已安装旧版本，请覆盖整个插件目录后重启。1.0.1 将天气数据在服务端填入静态模板，兼容不执行页面脚本的图片渲染器；1.0.2 修正了渲染文件路径；1.0.3 移除右上角摄氏度标记，并简化查询指令。天气大图生成失败时会尝试发送文字版天气图片。
+```bash
+git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/trss-weather-plugin
+```
 
-运行环境以 TRSS-Yunzai 当前 README 的 Node.js 23.11 或更新版本为准。
+确认 TRSS-Yunzai 的图片渲染器可用，并能访问 Open-Meteo 天气接口。然后重启 TRSS-Yunzai 即可，无需为插件单独安装 npm 依赖。
 
 ## 指令
 
 | 指令 | 功能 |
 |---|---|
-| `#天气帮助` | 图片帮助 |
-| `#天气 北京` | 查询指定城市 |
-| `#查询天气 东京` | 查询指定城市（与 `#天气 东京` 相同） |
-| `#天气 东京,JP` | 用国家代码消除同名城市歧义 |
-| `#订阅天气 北京 07:30` | 每日按北京当地时间 07:30 推送图片 |
+| `#天气帮助` | 发送图片版帮助 |
+| `#天气 北京` | 查询指定城市天气 |
+| `#查询天气 东京` | 查询指定城市天气 |
+| `#天气 东京,JP` | 用国家代码区分同名城市 |
+| `#订阅天气 北京 07:30` | 每天按北京当地时间 07:30 推送天气图片 |
 | `#订阅天气 北京` | 默认每天当地时间 07:00 推送 |
 | `#天气订阅` | 查看当前会话的订阅 |
 | `#天气` | 查询当前会话已订阅的城市 |
-| `#取消天气订阅` | 取消当前会话的推送 |
+| `#取消天气订阅` | 取消当前会话的每日推送 |
 
-每个群或私聊最多保留一个订阅。群订阅的新增和取消需要群主、管理员或机器人主人权限。订阅使用发起设置时的机器人账号发送；多机器人环境会分别保存。
+每个群或私聊最多保留一个订阅。群订阅需要群主、管理员或机器人主人设置；推送使用订阅时对应的机器人账号。
 
-## 推送和数据
+## 数据说明
 
-- 推送任务每分钟检查一次，以订阅城市的 IANA 时区计算当地日期和时间。到点后的 60 分钟内会尝试发送；成功后记录日期，同一天不会重复推送。机器人离线、接口或发送失败时，该时间窗内会继续重试。
-- 订阅记录保存在 Yunzai 根目录的 `data/weather-panel/subscriptions.json`，请在迁移机器人时一并保留。
-- 天气和地理编码来自 [Open-Meteo](https://open-meteo.com/en/docs)，空气质量来自其 [Air Quality API](https://open-meteo.com/en/docs/air-quality-api)。空气质量接口暂不可用时，天气图片仍可生成，并显示“未提供”。
-- 城市可写作 `城市,国家代码`，例如 `东京,JP`、`巴黎,FR`。北京、东京、洛杉矶的常见中文名已内置国家别名。
+- 天气和城市地理编码使用 [Open-Meteo](https://open-meteo.com/en/docs)，空气质量使用 [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api)。
+- 空气质量数据暂不可用时，天气图片仍可生成，并显示“未提供”。
+- 城市可写作 `城市,国家代码`，例如 `东京,JP`、`巴黎,FR`。北京、东京、洛杉矶的常见中文名已内置识别。
+- 订阅保存在 Yunzai 根目录的 `data/weather-panel/subscriptions.json`。
 
-## 文件
+## 文件结构
 
-- `index.js`：Yunzai 指令与定时推送。
-- `lib/weather.js`：城市解析、天气获取和数据整理。
-- `lib/subscriptions.js`：订阅持久化。
+- `index.js`：Yunzai 指令和每日推送任务。
+- `lib/weather.js`：城市解析、天气请求和数据整理。
+- `lib/subscriptions.js`：订阅数据读写。
 - `resources/weather.html`：天气图片模板。
-- `resources/info.html`：帮助及操作结果图片模板。
+- `resources/info.html`：帮助与操作结果图片模板。
