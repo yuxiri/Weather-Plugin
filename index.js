@@ -11,6 +11,7 @@ const store = new SubscriptionStore();
 const settingsStore = new WeatherSettingsStore();
 const root = fileURLToPath(new URL('./resources/', import.meta.url));
 const chat = e => ({ botId: String(e.self_id), type: e.isGroup ? 'group' : 'private', targetId: String(e.isGroup ? e.group_id : e.user_id) });
+const weatherSourceName = source => source === 'weatherapi' ? 'WeatherAPI.com' : source === 'bing' ? 'Bing 天气（MSN）' : 'Open-Meteo';
 
 async function imageOfWeather(location, weatherSettings = null) {
   const selectedSettings = weatherSettings || await settingsStore.get();
@@ -30,8 +31,11 @@ async function imageOfWeather(location, weatherSettings = null) {
 }
 
 async function imageOfInfo(title, lines) {
+  const weatherSettings = await settingsStore.get();
   const image = await renderer.render('yunzai-weather-plugin', {
-    saveId: 'info', tplFile: path.join(root, 'info.html'), title, lines, imgType: 'png',
+    saveId: 'info', tplFile: path.join(root, 'info.html'), title, lines,
+    sourceNote: `Yunzai · 天气数据由 ${weatherSourceName(weatherSettings.source)} 提供`,
+    imgType: 'png',
   });
   if (!image) throw new Error('图片渲染失败，请确认 Yunzai 的渲染器可用');
   return image;
@@ -111,8 +115,7 @@ export class WeatherPanel extends plugin {
     const arg = e.msg.replace(/^#?(?:切换天气源|切换数据源|天气数据源|天气源)/, '').trim();
     try {
       const current = await settingsStore.get();
-      const sourceName = source => source === 'weatherapi' ? 'WeatherAPI.com' : source === 'bing' ? 'Bing 天气（MSN）' : 'Open-Meteo';
-      const currentName = sourceName(current.source);
+      const currentName = weatherSourceName(current.source);
       if (!arg) {
         return sendInfo(e, '天气数据源', [
           `当前来源：${currentName}`,
@@ -138,7 +141,7 @@ export class WeatherPanel extends plugin {
         ]);
       }
       await settingsStore.setSource(source);
-      const selectedName = sourceName(source);
+      const selectedName = weatherSourceName(source);
       return sendInfo(e, '天气数据源已切换', [`当前来源：${selectedName}`, '天气查询和每日推送都会使用该来源。']);
     } catch (error) { return sendError(e, error); }
   }
