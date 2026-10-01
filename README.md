@@ -49,11 +49,11 @@ Open-Meteo 默认可用，无需 API Key。使用 WeatherAPI.com 前，先在 [W
 }
 ```
 
-之后发送 `#切换天气源 WeatherAPI`。不要在聊天指令中发送 API Key。城市名称和坐标仍由 Open-Meteo 地理编码接口解析。
+之后发送 `#切换天气源 WeatherAPI`。不要在聊天指令中发送 API Key。Bing 天气（MSN）为默认来源，Open-Meteo 与 WeatherAPI 也可手动切换；城市名称和坐标仍由 Open-Meteo 地理编码接口解析。
 
 ## 数据说明
 
-- 天气预报源可选 [Open-Meteo](https://open-meteo.com/en/docs)、[WeatherAPI.com](https://www.weatherapi.com/docs/) 或 [Bing 天气（MSN）](https://www.msn.cn/zh-cn/weather/forecast/in-%E5%8C%97%E4%BA%AC%E5%B8%82)。
+- 天气预报源可选 [Bing 天气（MSN）](https://www.msn.cn/zh-cn/weather/forecast/in-%E5%8C%97%E4%BA%AC%E5%B8%82)、[Open-Meteo](https://open-meteo.com/en/docs) 或 [WeatherAPI.com](https://www.weatherapi.com/docs/)。Bing 天气（MSN）为默认来源。
 - 城市地理编码使用 [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api)。
 - 空气质量数据由当前所选天气源提供；接口暂不可用时，天气图片仍可生成，并显示“未提供”。
 - 城市可写作 `城市,国家代码`，例如 `东京,JP`、`巴黎,FR`。北京、东京、洛杉矶的常见中文名已内置识别。
