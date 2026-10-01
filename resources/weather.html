@@ -15,6 +15,18 @@
 @media(max-width:750px){.side{grid-template-columns:repeat(2,minmax(0,1fr))}.side .tile{min-height:118px}.days{width:max-content;justify-content:initial}}
 @media(max-width:440px){.side{gap:10px}.side .tile{padding:15px 13px}.metric-value strong{font-size:23px}.metric-daylight strong{font-size:17px}.metric-note{font-size:12px}}
 #container{width:1140px;padding:20px;background:white}body{width:1140px;margin:0;padding:0}</style>
+<style>
+#container.theme-sunset .main,#container.theme-sunset .tile{background:#fff3e5}
+#container.theme-sunset .day.today{background:#ffe6cc}
+#container.theme-sunset .footer{color:#96775d}
+#container.theme-night{background:#101b2a;color:#edf5ff}
+#container.theme-night .main,#container.theme-night .tile{background:#1b2a3d}
+#container.theme-night .day.today{background:#2c4058}
+#container.theme-night .city,#container.theme-night .condition,#container.theme-night .feature-title,#container.theme-night .metric-value strong,#container.theme-night .day-name,#container.theme-night .day-temp{color:#edf5ff}
+#container.theme-night .updated,#container.theme-night .tile-name,#container.theme-night .metric-note,#container.theme-night .metric-value span,#container.theme-night .range span,#container.theme-night .day-temp span,#container.theme-night .hour-temp{color:#b6c7d9}
+#container.theme-night .time{border-color:#8092a6;color:#edf5ff}
+#container.theme-night .footer{color:#a8b8c9}
+</style>
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0" aria-hidden="true">
@@ -26,7 +38,7 @@
  <symbol id="rainy" viewBox="0 0 100 100"><path d="M20 70h60c11 0 16-8 16-16 0-12-10-20-21-19-4-14-15-22-28-21-13 1-23 10-26 23C10 37 3 45 3 55c0 8 7 15 17 15Z" fill="url(#cloudGrad)"/><path d="m51 71-7 18m20-18-7 18" stroke="#176ce0" stroke-width="8" stroke-linecap="round"/></symbol>
  <symbol id="cloudy" viewBox="0 0 100 100"><path d="M17 78h66c10 0 15-8 15-17 0-12-9-20-20-20-4-15-17-24-31-22-14 2-23 13-25 25C10 44 3 52 3 61c0 10 5 17 14 17Z" fill="url(#cloudGrad)"/></symbol>
 </svg>
-<div id="container"><main class="dashboard">
+<div id="container" class="{{themeClass}}"><main class="dashboard">
  <section class="main" aria-label="天气预报">
   <div class="main-top"><div id="city" class="city">{{city}}</div><div id="updated" class="updated">{{updated}}</div><div class="now"><svg class="wxicon" aria-hidden="true"><use href="#{{icon}}"/></svg><div id="current" class="degree">{{temperature}}<sup>°C</sup></div><div class="now-copy"><div id="condition" class="condition">{{condition}}</div><div id="range" class="range">高温 {{highText}} <span>低温 {{lowText}}</span></div></div></div></div>
   <div class="days-window"><div id="days" class="days">{{@daysHtml}}</div></div>

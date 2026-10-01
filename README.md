@@ -20,6 +20,15 @@ git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-
 | `#天气 北京` | 查询指定城市天气 |
 | `#查询天气 东京` | 查询指定城市天气 |
 | `#天气 东京,JP` | 用国家代码区分同名城市 |
+| `#绑定城市 重庆` / `#解绑城市` | 设置或解除当前会话的默认城市 |
+| `#天气预警` | 查看降雨、降雪提醒状态 |
+| `#开启降雨提醒` / `#开启降雪提醒` | 开启未来24小时降水提醒；用 `#关闭降雨提醒` / `#关闭降雪提醒` 停用 |
+| `#生活指数` | 查看出行、穿衣、防晒等建议 |
+| `#24小时预报` | 查看未来逐小时预报 |
+| `#设置天气早报 07:00` / `#设置天气晚报 20:00` | 设置每日简报时间；用 `#关闭天气早报` / `#关闭天气晚报` 停用 |
+| `#天气对比 重庆/北京/上海` | 对比 2 至 4 个城市的天气 |
+| `#天气主题 ocean` | 选择 `ocean`、`sunset` 或 `night` 卡片主题 |
+| `重庆明天会下雨吗` | 自然语言查询天气、降雨或降雪预报 |
 | `#天气源` | 查看当前天气数据源 |
 | `#切换天气源 <open-meteo/bing/weatherapi>` | 选择一种数据源，例如 `#切换天气源 bing`（仅机器人主人） |
 | 私聊 `#设置天气API <API Key>` | 设置 WeatherAPI 密钥（仅机器人主人） |
@@ -55,8 +64,11 @@ Bing 天气（MSN）为默认数据源，无需 API Key。使用 WeatherAPI.com 
 - 天气预报源可选 [Bing 天气（MSN）](https://www.msn.cn/zh-cn/weather/forecast/in-%E5%8C%97%E4%BA%AC%E5%B8%82)、[Open-Meteo](https://open-meteo.com/en/docs) 或 [WeatherAPI.com](https://www.weatherapi.com/docs/)。Bing 天气（MSN）为默认来源。
 - 城市地理编码使用 [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api)。
 - 空气质量数据由当前所选天气源提供；接口暂不可用时，天气图片仍可生成，并显示“未提供”。
+- 降雨、降雪提醒根据所选来源的未来24小时概率和天气状况判断；来源不提供概率时会显示“未提供”。
+- 生活指数优先使用来源提供的数据；缺少时按天气、温度、紫外线和降水信息生成通用建议。
 - 城市可写作 `城市,国家代码`，例如 `东京,JP`、`巴黎,FR`。北京、东京、洛杉矶的常见中文名已内置识别。
 - 订阅保存在 Yunzai 根目录的 `data/weather-panel/subscriptions.json`。
+- 默认城市、提醒、早晚报和主题保存在 Yunzai 根目录的 `data/weather-panel/preferences.json`；群内设置需群管理员权限。
 - 数据源设置保存在 `data/weather-panel/settings.json`；WeatherAPI 密钥也可通过 `WEATHERAPI_KEY` 环境变量提供。
 
 ## 文件结构
@@ -65,6 +77,6 @@ Bing 天气（MSN）为默认数据源，无需 API Key。使用 WeatherAPI.com 
 - `lib/weather.js`：城市解析、天气请求和数据整理。
 - `lib/subscriptions.js`：订阅数据读写。
 - `lib/settings.js`：全局数据源设置。
+- `lib/preferences.js`：默认城市、预警、早晚报和主题设置。
 - `resources/weather.html`：天气图片模板。
 - `resources/info.html`：结果图片模板。
-
