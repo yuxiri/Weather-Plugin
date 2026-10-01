@@ -1,0 +1,8 @@
+{
+  "name": "yunzai-weather-plugin",
+  "version": "1.0.3",
+  "private": true,
+  "type": "module",
+  "description": "Yunzai 天气图片查询与每日订阅推送",
+  "engines": { "node": ">=23.11" }
+}
