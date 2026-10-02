@@ -12,7 +12,7 @@
 
 /* 指标区移到主卡下方，以文字展示所有数据。 */
 .dashboard{display:block;max-width:1100px}.footer{max-width:1100px}.main{width:100%;min-height:530px}.days{width:100%;justify-content:space-between}.side{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;height:auto;margin-top:14px}.side .tile{height:auto;min-height:125px;border-radius:22px;padding:20px 22px;overflow:visible}.tile-name{font-size:15px;color:#526b80}.metric-value{margin-top:13px;font-size:14px;white-space:nowrap}.metric-value strong{font-size:27px;line-height:1.1;color:#081521}.metric-value span{color:#587086}.metric-daylight strong{font-size:21px}.metric-note{margin-top:9px;font-size:14px;line-height:1.4;color:#415a71}.hourly{margin-top:43px}
-.near-rain-values{display:flex;gap:22px;margin-top:13px}.near-rain-hour{display:flex;flex-direction:column;gap:5px}.near-rain-hour span{font-size:13px;color:#587086}.near-rain-hour strong{font-size:22px;line-height:1.1;color:#081521}.near-rain-empty{margin-top:14px;font-size:16px;color:#587086}
+.near-precipitation-value{margin-top:17px;white-space:normal}.near-precipitation-value strong{font-size:21px;line-height:1.2}
 @media(max-width:750px){.side{grid-template-columns:repeat(2,minmax(0,1fr))}.side .tile{min-height:118px}.days{width:max-content;justify-content:initial}}
 @media(max-width:440px){.side{gap:10px}.side .tile{padding:15px 13px}.metric-value strong{font-size:23px}.metric-daylight strong{font-size:17px}.metric-note{font-size:12px}}
 #container{width:1140px;padding:20px;background:white}body{width:1140px;margin:0;padding:0}</style>
@@ -26,8 +26,6 @@
 #container.theme-night .city,#container.theme-night .condition,#container.theme-night .feature-title,#container.theme-night .metric-value strong,#container.theme-night .day-name,#container.theme-night .day-temp{color:#edf5ff}
 #container.theme-night .updated,#container.theme-night .tile-name,#container.theme-night .metric-note,#container.theme-night .metric-value span,#container.theme-night .range span,#container.theme-night .day-temp span,#container.theme-night .hour-temp{color:#b6c7d9}
 #container.theme-night .time{border-color:#8092a6;color:#edf5ff}
-#container.theme-night .near-rain-hour strong{color:#edf5ff}
-#container.theme-night .near-rain-hour span,#container.theme-night .near-rain-empty{color:#b6c7d9}
 #container.theme-night .footer{color:#a8b8c9}
 </style>
 </head>
@@ -55,7 +53,7 @@
   <section class="tile"><div class="tile-name">风速</div><div class="metric-value"><strong id="wind">{{wind}}</strong><span> 公里/小时</span></div><div class="metric-note">阵风 <span id="gust">{{gust}}</span> 公里/小时 · <span id="wind-note">{{windNote}}</span></div></section>
   <section class="tile"><div class="tile-name">湿度</div><div class="metric-value"><strong id="humidity">{{humidityText}}</strong></div><div class="metric-note">露点 <span id="dew-point">{{dewPointText}}</span> · <span id="humidity-note">{{humidityNote}}</span></div></section>
   <section class="tile"><div class="tile-name">日光小时数</div><div class="metric-value metric-daylight"><strong id="daylight">{{daylight}}</strong></div><div class="metric-note">日出 <span id="sunrise">{{sunrise}}</span> · 日落 <span id="sunset">{{sunset}}</span></div></section>
-  <section class="tile"><div class="tile-name">近两小时降雨概率</div><div class="near-rain-values">{{@nearRainHtml}}</div><div class="metric-note">逐小时预报</div></section>
+  <section class="tile"><div class="tile-name">近两小时降水趋势</div><div class="metric-value near-precipitation-value"><strong>{{nearPrecipitationText}}</strong></div><div class="metric-note">按逐小时预报判断雨雪变化</div></section>
  </div>
 </main>
 <footer id="source-note" class="footer">{{sourceNote}}</footer></div>
