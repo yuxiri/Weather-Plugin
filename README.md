@@ -25,8 +25,9 @@ git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-
 | 指令 | 功能 |
 |---|---|
 | `#天气帮助` | 发送图片版帮助 |
-| `#天气 北京` | 查询指定城市天气 |
-| `#查询天气 东京` | 查询指定城市天气 |
+| `#天气 北京` | 查询指定城市或区县天气 |
+| `#天气 昌平区,北京` / `#天气 渝中区,重庆` | 查询区县；同名区县请补充所属城市 |
+| `#查询天气 东京` | 查询指定城市或区县天气 |
 | `#天气 东京,JP` | 用国家代码区分同名城市 |
 | `#绑定城市 重庆` / `#解绑城市` | 设置或解除当前会话的默认城市 |
 | `#天气提醒` | 查看降雨、降雪提醒状态 |
@@ -66,12 +67,13 @@ Bing 天气（MSN）为默认数据源，无需 API Key。使用 WeatherAPI.com 
 }
 ```
 
-密钥保存后发送 `#切换天气源 WeatherAPI` 即可使用该来源。Open-Meteo 也可手动切换；城市名称和坐标仍由 Open-Meteo 地理编码接口解析。
+密钥保存后发送 `#切换天气源 WeatherAPI` 即可使用该来源。Open-Meteo 也可手动切换；城市名称和坐标由 Open-Meteo 与 Photon 地理编码接口解析。
 
 ## 数据说明
 
 - 天气预报源可选 [Bing 天气（MSN）](https://www.msn.cn/zh-cn/weather/forecast/in-%E5%8C%97%E4%BA%AC%E5%B8%82)、[Open-Meteo](https://open-meteo.com/en/docs) 或 [WeatherAPI.com](https://www.weatherapi.com/docs/)。Bing 天气（MSN）为默认来源。
-- 城市地理编码使用 [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api)。
+- 地理编码优先使用 [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api)；没有匹配到时使用 [Photon](https://photon.komoot.io/) 查询城市、区县和上级地区。Photon 结果缓存 90 天，缓存文件位于 `data/weather-panel/geocoding-cache.json`；请求间隔至少 1 秒。天气卡片会注明 [OpenStreetMap 署名](https://www.openstreetmap.org/copyright)。Photon 公共服务可能限流或暂时不可用。
+- 区县可直接查询，例如 `#天气 昌平区`、`#天气 昆山市`；若有同名区县，可补充上级城市，例如 `#天气 长安区,西安`。
 - 空气质量数据由当前所选天气源提供；接口暂不可用时，天气图片仍可生成，并显示“未提供”。
 - 降雨、降雪提醒根据所选来源的未来24小时概率和天气状况判断；来源不提供概率时会显示“未提供”。
 - 生活指数优先使用来源提供的数据；缺少时按天气、温度、紫外线和降水信息生成通用建议。
