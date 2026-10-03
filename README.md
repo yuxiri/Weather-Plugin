@@ -91,3 +91,7 @@ Bing 天气（MSN）为默认数据源，无需 API Key。使用 WeatherAPI.com 
 - `lib/preferences.js`：默认城市、预警、早晚报和主题设置。
 - `resources/weather.html`：天气图片模板。
 - `resources/info.html`：结果图片模板。
+
+## 开源许可
+
+本项目使用 MIT License，详见 [LICENSE](LICENSE)。
