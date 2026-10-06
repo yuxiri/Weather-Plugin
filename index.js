@@ -3,7 +3,7 @@ import { segment } from 'oicq';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getWeather, getWeatherAlerts, localDateTime, resolveCity } from './lib/weather.js';
+import { freshWeatherAlerts, getWeather, getWeatherAlerts, localDateTime, resolveCity } from './lib/weather.js';
 import { SubscriptionStore, subscriptionKey } from './lib/subscriptions.js';
 import { WeatherSettingsStore } from './lib/settings.js';
 import { ChatPreferencesStore } from './lib/preferences.js';
@@ -63,7 +63,7 @@ const helpCards = [
     rows: [
       { command: '#开启降雨提醒 / #开启降雪提醒', note: '按未来预报提醒' },
       { command: '#天气预警 重庆', note: '查询当前官方预警' },
-      { command: '#开启预警提醒 / #关闭预警提醒', note: '推送 / 停止新预警' },
+      { command: '#开启预警提醒 / #关闭预警提醒', note: '新预警每条推送一次' },
       { command: '#天气提醒', note: '查看降水提醒状态' },
     ],
     examples: ['雷暴、暴雨、大雾、大风、台风等；MSN 数据可用时无需 API Key'],
@@ -246,7 +246,7 @@ export class WeatherPanel extends plugin {
     try { return await e.reply(segment.image(await imageOfHelp())); }
     catch (error) {
       logger.error('[天气插件] 帮助图片渲染失败', error);
-      return e.reply('天气插件帮助\n#天气 北京 / #查询天气 东京　查询城市或区县天气\n#绑定城市 重庆 / #解绑城市　设置或解除默认城市\n#生活指数 北京　查看生活建议\n#24小时预报 北京　查看未来逐小时天气\n#天气对比 重庆/北京/上海　对比多个城市\n#开启降雨提醒 / #开启降雪提醒　开启天气提醒\n#天气预警 北京　查询当前生效的气象预警\n#开启预警提醒 / #关闭预警提醒　推送或停止新预警\n#订阅天气 北京 07:30 / #取消天气订阅　每日推送或取消\n#天气主题 ocean　切换卡片主题\n#天气设置帮助　查看数据源、早晚报和 API 设置');
+      return e.reply('天气插件帮助\n#天气 北京 / #查询天气 东京　查询城市或区县天气\n#绑定城市 重庆 / #解绑城市　设置或解除默认城市\n#生活指数 北京　查看生活建议\n#24小时预报 北京　查看未来逐小时天气\n#天气对比 重庆/北京/上海　对比多个城市\n#开启降雨提醒 / #开启降雪提醒　开启天气提醒\n#天气预警 北京　查询当前生效的气象预警\n#开启预警提醒 / #关闭预警提醒　每条新预警推送一次\n#订阅天气 北京 07:30 / #取消天气订阅　每日推送或取消\n#天气主题 ocean　切换卡片主题\n#天气设置帮助　查看数据源、早晚报和 API 设置');
     }
   }
 
@@ -261,7 +261,7 @@ export class WeatherPanel extends plugin {
       '#开启降雨提醒 / #开启降雪提醒　开启天气提醒',
       '#关闭降雨提醒 / #关闭降雪提醒　关闭对应天气提醒',
       '#天气预警 北京　查看当前生效的政府气象预警',
-      '#开启预警提醒 / #关闭预警提醒　推送或停止新气象预警',
+      '#开启预警提醒 / #关闭预警提醒　新预警每条推送一次',
       '优先读取 Bing/MSN 预警信息；可设置 WeatherAPI API Key 作为备用。',
       '群内修改默认城市、主题、简报和提醒需群管理员权限。',
     ]);
@@ -431,7 +431,7 @@ export class WeatherPanel extends plugin {
       const current = await getWeatherAlerts(location, fetch, weatherSettings);
       await preferencesStore.set(target, {
         severeAlerts: true,
-        lastSevereAlertKeys: current.map(alert => alert.key).slice(-100),
+        lastSevereAlertKeys: current.flatMap(alert => [alert.key, alert.contentKey]).slice(-100),
       });
       return sendInfo(e, '气象预警提醒已开启', [
         `城市：${location.name}`,
@@ -668,12 +668,12 @@ export class WeatherPanel extends plugin {
             try {
               const alerts = await warningsFor(location);
               const seen = new Set(Array.isArray(preferences.lastSevereAlertKeys) ? preferences.lastSevereAlertKeys : []);
-              const fresh = alerts.filter(alert => !seen.has(alert.key));
+              const fresh = freshWeatherAlerts(alerts, seen);
               if (fresh.length) {
                 const image = segment.image(await imageOfInfo(`${location.name}气象预警`, weatherWarningLines(fresh, location), weatherAlertSourceNote));
                 await sendToChat(target, image);
                 preferences = await preferencesStore.set(target, {
-                  lastSevereAlertKeys: [...seen, ...fresh.map(alert => alert.key)].slice(-100),
+                  lastSevereAlertKeys: [...seen, ...fresh.flatMap(alert => [alert.key, alert.contentKey])].slice(-100),
                 });
               }
             } catch (error) {

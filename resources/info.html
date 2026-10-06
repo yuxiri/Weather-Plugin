@@ -2,9 +2,45 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-@font-face{font-family:MiSans;src:url("./MiSansVF.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}*{box-sizing:border-box}body{margin:0;background:white;font-family:MiSans,"Microsoft YaHei",Arial,sans-serif;color:#0c2234}#container{width:760px;padding:18px;background:white}.card{border-radius:28px;background:#f2f8fc;padding:32px 38px 35px}.eyebrow{font-size:13px;color:#6086a3;letter-spacing:.08em;font-weight:700}h1{font-size:29px;margin:10px 0 24px}.line{background:white;border-radius:13px;padding:13px 17px;margin:9px 0;font-size:17px;line-height:1.5;white-space:pre-wrap}.footer{font-size:12px;color:#73899e;margin:20px 3px 0}
+@font-face{font-family:MiSans;src:url("./MiSansVF.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+*{box-sizing:border-box}
+body{width:1024px;margin:0;background:#f7faff;color:#10284c;font-family:MiSans,"Microsoft YaHei",Arial,sans-serif}
+#container{width:1024px;padding:14px 18px 20px;background:#f7faff}
+.hero{min-height:166px;position:relative;overflow:hidden;border-radius:24px;padding:24px 40px;background:linear-gradient(112deg,#e9f6ff 0%,#e3f3ff 62%,#edf8ff 100%)}
+.eyebrow{font-size:15px;font-weight:700;letter-spacing:.08em;color:#6a9bd1}
+.hero-copy{position:relative;z-index:1;max-width:650px}
+h1{font-size:40px;line-height:1.12;letter-spacing:.01em;margin:11px 0 8px;color:#092a5c;overflow-wrap:anywhere}
+.intro{font-size:16px;line-height:1.4;color:#617da5;margin:0;max-width:650px}
+.hero-art{position:absolute;width:250px;height:154px;right:24px;top:6px}
+.detail-panel{margin-top:12px;padding:14px 16px 15px;border-radius:23px;background:linear-gradient(135deg,#e9f5fd,#eff9ff)}
+.line{min-height:48px;display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-radius:14px;background:#ffffffc9;color:#17345e;font-size:17px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.line+.line{margin-top:7px}
+.bullet{flex:0 0 9px;width:9px;height:9px;margin-top:8px;border-radius:50%;background:linear-gradient(145deg,#65afff,#347af0);box-shadow:0 0 0 4px #e6f2ff}
+.line-text{min-width:0;flex:1}
+.footer{margin:12px 5px 0;color:#7186a8;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
 </style>
 </head>
-<body><div id="container"><div class="card"><div class="eyebrow">WEATHER / 天气插件</div><h1>{{title}}</h1>{{each lines line}}<div class="line">{{line}}</div>{{/each}}<div class="footer">{{sourceNote}}</div></div></div></body>
+<body>
+<div id="container">
+  <header class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">WEATHER / 天气插件</div>
+      <h1>{{title}}</h1>
+      <p class="intro">天气状态与设置详情</p>
+    </div>
+    <svg class="hero-art" viewBox="0 0 280 170" aria-hidden="true">
+      <circle cx="187" cy="76" r="38" fill="#ffc94f"/><g stroke="#ffc94f" stroke-width="6" stroke-linecap="round"><path d="M187 18v-9M187 143v-9M129 76h-10M255 76h-10M146 35l-7-7m96 96-7-7m0-82-7 7m-82 82-7 7"/></g>
+      <path d="M33 103c0-18 14-32 32-32 14 0 26 9 30 22 4-4 10-7 17-7 15 0 27 12 27 27 0 14-11 25-25 25H64c-17 0-31-15-31-35Z" fill="#cbe8ff" opacity=".75"/>
+      <path d="M130 113c3-18 18-31 37-31 17 0 31 10 36 25 4-5 11-8 18-8 14 0 25 11 25 25 0 13-11 24-24 24h-66c-16 0-28-14-26-35Z" fill="#fff" opacity=".92"/>
+      <path d="M151 126c3-18 18-31 37-31 17 0 31 10 36 25 4-5 11-8 18-8 14 0 25 11 25 25 0 13-11 24-24 24h-66c-16 0-28-14-26-35Z" fill="#75baff"/>
+    </svg>
+  </header>
+  <main class="detail-panel">
+    {{each lines line}}<div class="line"><span class="bullet" aria-hidden="true"></span><span class="line-text">{{line}}</span></div>{{/each}}
+  </main>
+  <footer class="footer">{{sourceNote}}</footer>
+</div>
+</body>
 </html>
