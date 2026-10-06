@@ -36,10 +36,10 @@ async function imageOfInfo(title, lines) {
   const weatherSettings = await settingsStore.get();
   const image = await renderer.render('yunzai-weather-plugin', {
     saveId: 'info', tplFile: path.join(root, 'info.html'), title, lines,
-    sourceNote: `Yunzai · 天气数据由 ${weatherSourceName(weatherSettings.source)} 提供`,
+    sourceNote: `天气数据由 ${weatherSourceName(weatherSettings.source)} 提供`,
     imgType: 'png',
   });
-  if (!image) throw new Error('图片渲染失败，请确认 Yunzai 的渲染器可用');
+  if (!image) throw new Error('图片渲染失败，请确认机器人的图片渲染器可用');
   return image;
 }
 
