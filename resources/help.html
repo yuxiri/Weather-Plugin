@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@font-face{font-family:MiSans;src:url("./MiSansVF.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+*{box-sizing:border-box}
+body{width:1024px;margin:0;background:#f7faff;color:#10284c;font-family:MiSans,"Microsoft YaHei",Arial,sans-serif}
+#container{width:1024px;padding:14px 18px 20px;background:#f7faff}
+.hero{height:180px;position:relative;overflow:hidden;border-radius:24px;padding:25px 42px;background:linear-gradient(112deg,#e9f6ff 0%,#e3f3ff 62%,#edf8ff 100%)}
+.eyebrow{font-size:15px;font-weight:700;letter-spacing:.08em;color:#6a9bd1}
+h1{font-size:48px;line-height:1.1;letter-spacing:.01em;margin:12px 0 9px;color:#092a5c}
+.intro{font-size:18px;color:#617da5;margin:0;max-width:720px}
+.hero-art{position:absolute;width:265px;height:160px;right:25px;top:8px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.feature{padding:15px 17px 14px;border-radius:23px;overflow:hidden;min-height:176px}
+.tone-blue{background:linear-gradient(135deg,#e9f5fd,#eff9ff)}
+.tone-purple{background:linear-gradient(135deg,#f0edff,#f6f3ff)}
+.tone-green{background:linear-gradient(135deg,#e9f8f2,#f0fbf7)}
+.tone-orange{background:linear-gradient(135deg,#fff1e5,#fff7ef)}
+.tone-pink{background:linear-gradient(135deg,#fff0f4,#fff5f8)}
+.tone-cyan{background:linear-gradient(135deg,#e8f8fc,#f1fbfd)}
+.tone-violet{background:linear-gradient(135deg,#f0edff,#f7f5ff)}
+.tone-rose{background:linear-gradient(135deg,#fff0f4,#fff6f8)}
+.tone-mint{background:linear-gradient(135deg,#e9f8f2,#f2fbf7)}
+.feature-head{display:flex;align-items:center;gap:13px;min-height:61px;margin-bottom:10px}
+.icon{flex:0 0 60px;width:60px;height:60px;border-radius:20px;display:grid;place-items:center;color:#fff;box-shadow:0 5px 12px #21426416}
+.icon svg{width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.tone-blue .icon{background:linear-gradient(145deg,#62a9ff,#347af0)}
+.tone-purple .icon,.tone-violet .icon,.tone-mint .icon{background:linear-gradient(145deg,#a28aff,#7554ed)}
+.tone-green .icon{background:linear-gradient(145deg,#58d1a6,#35b88d)}
+.tone-orange .icon{background:linear-gradient(145deg,#ffad55,#ff7e1d)}
+.tone-pink .icon,.tone-rose .icon{background:linear-gradient(145deg,#ff779c,#f24478)}
+.tone-cyan .icon{background:linear-gradient(145deg,#54d1ec,#1ab6d5)}
+h2{font-size:24px;line-height:1.2;margin:0 0 4px;color:#0c2b5b}
+.subtitle{font-size:15px;line-height:1.35;color:#7186a8;margin:0}
+.rows{display:grid;gap:5px}
+.row{min-height:39px;border-radius:13px;padding:7px 12px 7px 15px;background:#ffffffb8;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.command{font-size:17px;line-height:1.25;color:#132c57;font-weight:600;overflow-wrap:anywhere}
+.note{flex:0 0 auto;font-size:13px;color:#7182a3;text-align:right}
+.note:empty{display:none}
+.examples{display:flex;flex-wrap:wrap;gap:6px 10px;margin:9px 4px 0;color:#6c82a5;font-size:14px;line-height:1.35}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:9px 3px 0}
+.tag{padding:4px 11px;border-radius:11px;font-size:13px;color:#3b7385;background:#ffffff9c}
+.tone-green .tag{color:#27866e;background:#d2f2e6}
+.tone-mint .tag{color:#5266a1;background:#ffffffc9}
+.settings{margin-top:12px;min-height:116px;padding:15px 18px;border-radius:23px;background:linear-gradient(110deg,#eaf5ff,#eef7ff);display:grid;grid-template-columns:1fr auto;align-items:center;gap:16px}
+.settings-main{display:flex;align-items:center;gap:13px}
+.settings-main .icon{background:linear-gradient(145deg,#62a9ff,#347af0)}
+.settings-copy h2{margin-bottom:3px}
+.settings-copy p{margin:0;color:#7186a8;font-size:14px}
+.settings-command{display:inline-block;margin-top:8px;padding:7px 12px;background:#ffffffc9;border-radius:12px;color:#132c57;font-size:16px;font-weight:600}
+.setting-list{display:flex;gap:8px}
+.setting-item{width:142px;min-height:68px;padding:10px 11px;border-radius:16px;background:#ffffffba;display:flex;align-items:center;gap:9px}
+.setting-item svg{flex:0 0 21px;width:21px;height:21px;fill:none;stroke:#4c83c8;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.setting-item strong{display:block;font-size:14px;color:#254773}
+.setting-item small{display:block;margin-top:2px;font-size:10px;line-height:1.25;color:#8494ac}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 32 32"><circle cx="13.5" cy="13.5" r="8.5"/><path d="m20 20 7 7"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 32 32"><path d="M25 13c0 7-9 16-9 16S7 20 7 13a9 9 0 1 1 18 0Z"/><circle cx="16" cy="13" r="3"/><path d="m5 27 7-3 5 2 10-4"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 32 32"><path d="M26 6C14 6 6 11 6 20a6 6 0 0 0 6 6c9 0 14-8 14-20Z"/><path d="M5 28c4-8 9-12 17-16M14 20l-1-6m6 2 5 1"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12"/><path d="M16 9v8l6 3"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 32 32"><rect x="5" y="7" width="22" height="21" rx="3"/><path d="M10 4v6m12-6v6M5 13h22"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 32 32"><path d="M5 27V5m0 22h23"/><rect x="9" y="17" width="4" height="7" rx="1"/><rect x="17" y="11" width="4" height="13" rx="1"/><rect x="25" y="6" width="4" height="18" rx="1"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 32 32"><path d="M24 13a8 8 0 0 0-16 0c0 9-3 9-3 11h22c0-2-3-2-3-11Zm-11 15a3 3 0 0 0 6 0"/></symbol>
+  <symbol id="i-send" viewBox="0 0 32 32"><path d="m28 4-9 24-5-10-10-5 24-9Z"/><path d="M14 18 28 4"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 32 32"><path d="M16 4C8.8 4 4 9.4 4 16a12 12 0 0 0 12 12c2.3 0 3-1.2 3-2.6 0-1.1-.8-1.8-.8-2.8 0-1.5 1-2.4 2.5-2.4H23c3 0 5-2.3 5-5.2C28 9.5 22.7 4 16 4Z"/><circle cx="10" cy="13" r="1"/><circle cx="15" cy="9" r="1"/><circle cx="21" cy="11" r="1"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 32 32"><circle cx="16" cy="16" r="4"/><path d="m13 4-.7 3a10 10 0 0 0-2.4 1.4L7 7l-3 5 2.2 2a11 11 0 0 0 0 3L4 19l3 5 2.9-1.4a10 10 0 0 0 2.4 1.4l.7 3h6l.7-3a10 10 0 0 0 2.4-1.4L25 24l3-5-2.2-2a11 11 0 0 0 0-3L28 12l-3-5-2.9 1.4a10 10 0 0 0-2.4-1.4L19 4h-6Z"/></symbol>
+</svg>
+<div id="container">
+  <header class="hero">
+    <div class="eyebrow">WEATHER / 天气插件</div>
+    <h1>天气插件帮助</h1>
+    <p class="intro">查询天气、查看预报与生活指数，也可设置城市、提醒和每日推送。</p>
+    <svg class="hero-art" viewBox="0 0 280 170" aria-hidden="true">
+      <circle cx="187" cy="76" r="38" fill="#ffc94f"/><g stroke="#ffc94f" stroke-width="6" stroke-linecap="round"><path d="M187 18v-9M187 143v-9M129 76h-10M255 76h-10M146 35l-7-7m96 96-7-7m0-82-7 7m-82 82-7 7"/></g>
+      <path d="M33 103c0-18 14-32 32-32 14 0 26 9 30 22 4-4 10-7 17-7 15 0 27 12 27 27 0 14-11 25-25 25H64c-17 0-31-15-31-35Z" fill="#cbe8ff" opacity=".75"/>
+      <path d="M130 113c3-18 18-31 37-31 17 0 31 10 36 25 4-5 11-8 18-8 14 0 25 11 25 25 0 13-11 24-24 24h-66c-16 0-28-14-26-35Z" fill="#fff" opacity=".92"/>
+      <path d="M151 126c3-18 18-31 37-31 17 0 31 10 36 25 4-5 11-8 18-8 14 0 25 11 25 25 0 13-11 24-24 24h-66c-16 0-28-14-26-35Z" fill="#75baff"/>
+    </svg>
+  </header>
+  <main class="grid">
+    {{each cards card}}
+    <section class="feature tone-{{card.tone}}">
+      <div class="feature-head">
+        <div class="icon"><svg aria-hidden="true"><use href="#i-{{card.icon}}"/></svg></div>
+        <div><h2>{{card.title}}</h2><p class="subtitle">{{card.subtitle}}</p></div>
+      </div>
+      <div class="rows">{{each card.rows row}}<div class="row"><span class="command">{{row.command}}</span><span class="note">{{row.note}}</span></div>{{/each}}</div>
+      {{if card.tags && card.tags.length}}<div class="tags">{{each card.tags tag}}<span class="tag">{{tag}}</span>{{/each}}</div>{{/if}}
+      {{if card.examples && card.examples.length}}<div class="examples">{{each card.examples example}}<span>{{example}}</span>{{/each}}</div>{{/if}}
+    </section>
+    {{/each}}
+  </main>
+  <section class="settings">
+    <div class="settings-main">
+      <div class="icon"><svg aria-hidden="true"><use href="#i-settings"/></svg></div>
+      <div class="settings-copy"><h2>设置帮助</h2><p>查看数据源、早晚报和 API 设置</p><span class="settings-command">#天气设置帮助</span></div>
+    </div>
+    <div class="setting-list">
+      <div class="setting-item"><svg aria-hidden="true"><path d="M16 3 5 9v14l11 6 11-6V9L16 3Z"/><path d="m5 9 11 6 11-6M16 15v14"/></svg><div><strong>数据来源</strong><small>Open-Meteo · Bing · WeatherAPI</small></div></div>
+      <div class="setting-item"><svg aria-hidden="true"><path d="M24 12a8 8 0 0 0-16 0c0 9-3 9-3 11h22c0-2-3-2-3-11Zm-11 15a3 3 0 0 0 6 0"/></svg><div><strong>早晚报设置</strong><small>查看 / 修改推送时间</small></div></div>
+      <div class="setting-item"><svg aria-hidden="true"><circle cx="16" cy="16" r="4"/><path d="m13 4-.7 3a10 10 0 0 0-2.4 1.4L7 7l-3 5 2.2 2a11 11 0 0 0 0 3L4 19l3 5 2.9-1.4a10 10 0 0 0 2.4 1.4l.7 3h6l.7-3a10 10 0 0 0 2.4-1.4L25 24l3-5-2.2-2a11 11 0 0 0 0-3L28 12l-3-5-2.9 1.4a10 10 0 0 0-2.4-1.4L19 4h-6Z"/></svg><div><strong>API 设置</strong><small>私聊机器人主人配置</small></div></div>
+      <div class="setting-item"><svg aria-hidden="true"><use href="#i-palette"/></svg><div><strong>卡片主题</strong><small>ocean · sunset · night</small></div></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

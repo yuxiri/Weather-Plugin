@@ -3,7 +3,7 @@ import { segment } from 'oicq';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getWeather, localDateTime, resolveCity } from './lib/weather.js';
+import { getWeather, getWeatherAlerts, localDateTime, resolveCity } from './lib/weather.js';
 import { SubscriptionStore, subscriptionKey } from './lib/subscriptions.js';
 import { WeatherSettingsStore } from './lib/settings.js';
 import { ChatPreferencesStore } from './lib/preferences.js';
@@ -17,6 +17,66 @@ const rendererNamespace = 'yunzai-weather-plugin';
 const rendererFontPath = path.resolve('./temp/html', rendererNamespace, 'MiSansVF.ttf');
 const chat = e => ({ botId: String(e.self_id), type: e.isGroup ? 'group' : 'private', targetId: String(e.isGroup ? e.group_id : e.user_id) });
 const weatherSourceName = source => source === 'weatherapi' ? 'WeatherAPI.com' : source === 'bing' ? 'Bing 天气（MSN）' : 'Open-Meteo';
+const weatherAlertSourceNote = '气象预警来源：Bing/MSN 页面预警数据，WeatherAPI 可备用';
+const helpCards = [
+  {
+    tone: 'blue', icon: 'search', title: '查询天气', subtitle: '查询指定城市或区县的当前天气',
+    rows: [
+      { command: '#天气 北京', note: '查询北京天气' },
+      { command: '#查询天气 东京', note: '也可直接查询任意城市' },
+    ],
+    examples: ['区县示例：#天气 渝中区,重庆'],
+  },
+  {
+    tone: 'purple', icon: 'pin', title: '城市管理', subtitle: '设置或解除默认城市',
+    rows: [
+      { command: '#绑定城市 重庆', note: '设置默认城市' },
+      { command: '#解绑城市', note: '解除默认城市' },
+    ],
+    examples: ['绑定后，不带城市的查询会使用默认城市'],
+  },
+  {
+    tone: 'green', icon: 'leaf', title: '生活指数', subtitle: '查看出行、穿衣、防晒等生活建议',
+    rows: [{ command: '#生活指数 北京', note: '城市可省略，使用默认城市' }],
+    tags: ['穿衣', '出行', '防晒', '感冒', '洗车'],
+  },
+  {
+    tone: 'orange', icon: 'clock', title: '24小时预报', subtitle: '查看未来逐小时天气变化',
+    rows: [{ command: '#24小时预报 北京', note: '城市可省略，使用默认城市' }],
+    examples: ['包含气温、天气状况及雨雪概率'],
+  },
+  {
+    tone: 'pink', icon: 'calendar', title: '天气早报 / 晚报', subtitle: '按设定时间接收每日天气图片',
+    rows: [
+      { command: '#设置天气早报 07:00', note: '设置早报时间' },
+      { command: '#设置天气晚报 20:00', note: '设置晚报时间' },
+    ],
+    examples: ['#关闭天气早报 / #关闭天气晚报'],
+  },
+  {
+    tone: 'cyan', icon: 'chart', title: '城市天气对比', subtitle: '并排查看多个城市的天气',
+    rows: [{ command: '#天气对比 重庆/北京/上海', note: '支持 2 至 4 个城市' }],
+    examples: ['示例：#天气对比 北京/东京'],
+  },
+  {
+    tone: 'violet', icon: 'bell', title: '天气提醒与预警', subtitle: '分别设置降水提醒和官方气象预警',
+    rows: [
+      { command: '#开启降雨提醒 / #开启降雪提醒', note: '按未来预报提醒' },
+      { command: '#天气预警 重庆', note: '查询当前官方预警' },
+      { command: '#开启预警提醒 / #关闭预警提醒', note: '推送 / 停止新预警' },
+      { command: '#天气提醒', note: '查看降水提醒状态' },
+    ],
+    examples: ['雷暴、暴雨、大雾、大风、台风等；MSN 数据可用时无需 API Key'],
+  },
+  {
+    tone: 'rose', icon: 'send', title: '订阅天气', subtitle: '定时推送每日天气图片',
+    rows: [
+      { command: '#订阅天气 北京 07:30', note: '每天推送' },
+      { command: '#取消天气订阅', note: '取消推送' },
+    ],
+    examples: ['不填时间时，默认每天 07:00 推送'],
+  },
+];
 
 let rendererFontCopy;
 async function ensureRendererFont() {
@@ -53,20 +113,29 @@ async function imageOfWeather(location, weatherSettings = null, theme = 'ocean',
   ]);
 }
 
-async function imageOfInfo(title, lines) {
+async function imageOfInfo(title, lines, sourceNote = null) {
   await ensureRendererFont();
   const weatherSettings = await settingsStore.get();
   const image = await renderer.render(rendererNamespace, {
     saveId: 'info', tplFile: path.join(root, 'info.html'), title, lines,
-    sourceNote: `天气数据由 ${weatherSourceName(weatherSettings.source)} 提供`,
+    sourceNote: sourceNote || `天气数据由 ${weatherSourceName(weatherSettings.source)} 提供`,
     imgType: 'png',
   });
   if (!image) throw new Error('图片渲染失败，请确认机器人的图片渲染器可用');
   return image;
 }
 
-async function sendInfo(e, title, lines) {
-  try { return await e.reply(segment.image(await imageOfInfo(title, lines))); }
+async function imageOfHelp() {
+  await ensureRendererFont();
+  const image = await renderer.render(rendererNamespace, {
+    saveId: 'help', tplFile: path.join(root, 'help.html'), cards: helpCards, imgType: 'png',
+  });
+  if (!image) throw new Error('帮助图片渲染失败');
+  return image;
+}
+
+async function sendInfo(e, title, lines, sourceNote = null) {
+  try { return await e.reply(segment.image(await imageOfInfo(title, lines, sourceNote))); }
   catch (error) { logger.error('[天气插件] 信息卡渲染失败', error); return e.reply(`${title}\n${lines.join('\n')}`); }
 }
 
@@ -118,19 +187,27 @@ function precipitationSummary(weather, type) {
   return weather.hourly24?.find(hour => (hour[probabilityKey] ?? 0) >= threshold || conditionRe.test(hour.condition || '') || (type === 'snow' && (hour.snowAmount ?? 0) > 0));
 }
 
-function naturalQueryParts(message) {
-  const text = String(message || '').trim().replace(/[？?。！!，,、]+$/g, '');
-  if (!/(天气|下雨|降雨|下雪|降雪|气温|温度|多少度|冷不冷|热不热)/.test(text)) return null;
-  const dayOffset = text.includes('后天') ? 2 : text.includes('明天') ? 1 : 0;
-  const type = /下雪|降雪|积雪/.test(text) ? 'snow' : /下雨|降雨/.test(text) ? 'rain' : /气温|温度|多少度|冷不冷|热不热/.test(text) ? 'temperature' : 'weather';
-  let city = text.split(/下雨|降雨|下雪|降雪|积雪|天气|气温|温度|多少度|冷不冷|热不热/)[0];
-  city = city
-    .replace(/^(?:请问|麻烦|帮我(?:查一下|查查|查询)?|查询|查一下|查查|看一下|想知道)/, '')
-    .replace(/今天|明天|后天|今晚|今早|明早/g, '')
-    .replace(/(?:会不会|是否|会|有|将会).*$/g, '')
-    .replace(/(?:怎么样|如何|吗|呢)$/g, '')
-    .trim();
-  return { city, dayOffset, type };
+function warningTime(value, timezone) {
+  const timestamp = Date.parse(value || '');
+  if (!Number.isFinite(timestamp)) return value || '未提供';
+  try {
+    return new Intl.DateTimeFormat('zh-CN', {
+      timeZone: timezone, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).format(new Date(timestamp));
+  } catch { return value; }
+}
+
+function weatherWarningLines(alerts, location, limit = 4) {
+  const lines = [];
+  for (const alert of alerts.slice(0, limit)) {
+    lines.push(`【${alert.kind} · ${alert.severity}】${alert.headline || alert.event}`);
+    if (alert.areas) lines.push(`影响范围：${alert.areas}`);
+    lines.push(`有效时间：${warningTime(alert.effective, location.timezone)} 至 ${warningTime(alert.expires, location.timezone)}`);
+    const detail = String(alert.description || '').replace(/\s+/g, ' ').trim();
+    if (detail) lines.push(`预警说明：${detail.length > 180 ? `${detail.slice(0, 180)}…` : detail}`);
+  }
+  if (alerts.length > limit) lines.push(`另有 ${alerts.length - limit} 条生效预警，发送 #天气预警 查看。`);
+  return lines;
 }
 
 export class WeatherPanel extends plugin {
@@ -152,34 +229,25 @@ export class WeatherPanel extends plugin {
         { reg: '^#?天气主题(?:\\s+.+)?$', fnc: 'theme' },
         { reg: '^#?天气提醒$', fnc: 'precipitationAlerts' },
         { reg: '^#?(?:开启降雨提醒|关闭降雨提醒|开启降雪提醒|关闭降雪提醒)$', fnc: 'precipitationAlerts' },
+        { reg: '^#?天气预警(?:\\s+.+)?$', fnc: 'weatherWarnings' },
+        { reg: '^#?(?:开启预警提醒|关闭预警提醒)$', fnc: 'severeWeatherAlertToggle' },
         { reg: '^#?(?:天气早报|设置天气早报|关闭天气早报)(?:\\s+.+)?$', fnc: 'morningReport' },
         { reg: '^#?(?:天气晚报|设置天气晚报|关闭天气晚报)(?:\\s+.+)?$', fnc: 'eveningReport' },
         { reg: '^#?(?:天气源|天气数据源|切换天气源|切换数据源)(?:\\s+.+)?$', fnc: 'source' },
         { reg: '^#?(?:取消天气订阅|退订天气)$', fnc: 'unsubscribe' },
         { reg: '^#?(?:订阅天气|天气订阅)(?:\\s+.+)?$', fnc: 'subscribe' },
         { reg: '^#?(?:天气|查询天气)(?:\\s+.+)?$', fnc: 'query' },
-        { reg: '^(?!#).{1,80}(?:天气|下雨|降雨|下雪|降雪|气温|温度|多少度|冷不冷|热不热).{0,30}$', fnc: 'naturalQuery' },
       ],
       task: { name: '天气每日图片推送', cron: '0 * * * * *', fnc: () => WeatherPanel.pushDaily(), log: false },
     });
   }
 
   async help(e) {
-    return sendInfo(e, '天气插件帮助', [
-      '常用功能',
-      '#天气 北京 / #查询天气 东京　查询城市或区县天气',
-      '#天气 昌平区,北京 / #天气 渝中区,重庆　同名区县请补充所属城市',
-      '#绑定城市 重庆 / #解绑城市　设置或解除默认城市',
-      '#生活指数　查看出行、穿衣、防晒建议',
-      '#24小时预报　查看未来逐小时天气',
-      '#天气对比 重庆/北京/上海　对比多个城市',
-      '#天气提醒 / #开启降雨提醒 / #开启降雪提醒　查询或开启天气提醒',
-      '#订阅天气 北京 07:30 / #取消天气订阅　每日推送或取消',
-      '自然语言示例：重庆明天会下雨吗',
-      '其他设置',
-      '#天气主题 ocean/sunset/night　切换卡片主题',
-      '#天气设置帮助　查看数据源、早晚报和 API 设置',
-    ]);
+    try { return await e.reply(segment.image(await imageOfHelp())); }
+    catch (error) {
+      logger.error('[天气插件] 帮助图片渲染失败', error);
+      return e.reply('天气插件帮助\n#天气 北京 / #查询天气 东京　查询城市或区县天气\n#绑定城市 重庆 / #解绑城市　设置或解除默认城市\n#生活指数 北京　查看生活建议\n#24小时预报 北京　查看未来逐小时天气\n#天气对比 重庆/北京/上海　对比多个城市\n#开启降雨提醒 / #开启降雪提醒　开启天气提醒\n#天气预警 北京　查询当前生效的气象预警\n#开启预警提醒 / #关闭预警提醒　推送或停止新预警\n#订阅天气 北京 07:30 / #取消天气订阅　每日推送或取消\n#天气主题 ocean　切换卡片主题\n#天气设置帮助　查看数据源、早晚报和 API 设置');
+    }
   }
 
   async settingsHelp(e) {
@@ -192,6 +260,9 @@ export class WeatherPanel extends plugin {
       '#天气提醒　查看降雨、降雪提醒状态',
       '#开启降雨提醒 / #开启降雪提醒　开启天气提醒',
       '#关闭降雨提醒 / #关闭降雪提醒　关闭对应天气提醒',
+      '#天气预警 北京　查看当前生效的政府气象预警',
+      '#开启预警提醒 / #关闭预警提醒　推送或停止新气象预警',
+      '优先读取 Bing/MSN 预警信息；可设置 WeatherAPI API Key 作为备用。',
       '群内修改默认城市、主题、简报和提醒需群管理员权限。',
     ]);
   }
@@ -322,6 +393,57 @@ export class WeatherPanel extends plugin {
     } catch (error) { return sendError(e, error); }
   }
 
+  async weatherWarnings(e) {
+    const arg = e.msg.replace(/^#?天气预警/, '').trim();
+    const target = chat(e);
+    try {
+      const preferences = await preferencesStore.get(target);
+      const location = arg ? await resolveCity(arg) : await locationForChat(target, preferences);
+      if (!location) return sendInfo(e, '需要城市信息', ['发送 #天气预警 北京 查询指定城市，或先发送 #绑定城市 重庆 设置默认城市。']);
+      const weatherSettings = await settingsStore.get();
+      const alerts = await getWeatherAlerts(location, fetch, weatherSettings);
+      if (!alerts.length) return sendInfo(e, `${location.name}气象预警`, [
+        '当前没有检测到生效中的政府气象预警。',
+        '数据源覆盖地区内的雷暴、暴雨、大雾、大风、台风等预警会在此显示。',
+      ], weatherAlertSourceNote);
+      return sendInfo(e, `${location.name}气象预警`, weatherWarningLines(alerts, location), weatherAlertSourceNote);
+    } catch (error) {
+      logger.error('[天气插件] 气象预警查询失败', error);
+      return sendInfo(e, '气象预警服务暂不可用', [error.message || String(error), '机器人主人可私聊发送 #设置天气API <API Key> 配置备用预警源。'], weatherAlertSourceNote);
+    }
+  }
+
+  async severeWeatherAlertToggle(e) {
+    const target = chat(e);
+    const command = e.msg.replace(/^#?/, '');
+    const enabled = command === '开启预警提醒';
+    try {
+      if (!canChangeGroup(e)) return sendInfo(e, '需要群管理权限', ['仅群主、管理员或机器人主人可修改本群气象预警提醒。']);
+      const preferences = await preferencesStore.get(target);
+      if (!enabled) {
+        await preferencesStore.set(target, { severeAlerts: false });
+        return sendInfo(e, '气象预警提醒已关闭', ['本会话不会再收到新发布的气象预警推送。'], weatherAlertSourceNote);
+      }
+
+      const location = await locationForChat(target, preferences);
+      if (!location) return sendInfo(e, '尚未设置默认城市', ['请先发送 #绑定城市 重庆，或订阅天气后再开启气象预警提醒。']);
+      const weatherSettings = await settingsStore.get();
+      const current = await getWeatherAlerts(location, fetch, weatherSettings);
+      await preferencesStore.set(target, {
+        severeAlerts: true,
+        lastSevereAlertKeys: current.map(alert => alert.key).slice(-100),
+      });
+      return sendInfo(e, '气象预警提醒已开启', [
+        `城市：${location.name}`,
+        `当前生效预警：${current.length} 条。已有预警已记为已读，后续新预警会推送。`,
+        '系统约每 15 分钟检查一次；发送 #天气预警 可查看当前预警。',
+      ], weatherAlertSourceNote);
+    } catch (error) {
+      logger.error('[天气插件] 气象预警提醒设置失败', error);
+      return sendInfo(e, '气象预警提醒设置失败', [error.message || String(error), '可私聊机器人发送 #设置天气API <API Key> 配置备用预警源。'], weatherAlertSourceNote);
+    }
+  }
+
   async morningReport(e) { return this.configureReport(e, 'morning'); }
   async eveningReport(e) { return this.configureReport(e, 'evening'); }
 
@@ -349,36 +471,6 @@ export class WeatherPanel extends plugin {
       if (!await locationForChat(target, preferences)) return sendInfo(e, '尚未设置默认城市', ['请先发送 #绑定城市 重庆，再设置天气早报或晚报。']);
       await preferencesStore.set(target, { [timeKey]: time, [dateKey]: null });
       return sendInfo(e, `天气${label}已设置`, [`每天 ${time} 按城市当地时间推送。`]);
-    } catch (error) { return sendError(e, error); }
-  }
-
-  async naturalQuery(e) {
-    const parsed = naturalQueryParts(e.msg);
-    if (!parsed) return false;
-    const target = chat(e);
-    try {
-      const preferences = await preferencesStore.get(target);
-      const location = parsed.city ? await resolveCity(parsed.city) : await locationForChat(target, preferences);
-      if (!location) return sendInfo(e, '需要城市信息', ['请在问题中写上城市，或先发送 #绑定城市 重庆 设置默认城市。']);
-      const weather = await getWeather(location, fetch, await settingsStore.get());
-      const day = weather.days[parsed.dayOffset];
-      if (!day) return sendInfo(e, '预报范围不足', ['当前数据源没有返回所询日期的天气预报。']);
-      const dayLabel = parsed.dayOffset === 1 ? '明天' : parsed.dayOffset === 2 ? '后天' : '今天';
-      const lines = [`天气：${day.condition} · ${day.low ?? '—'}°C 至 ${day.high ?? '—'}°C`];
-      if (parsed.type === 'rain') {
-        const probability = day.rainProbability;
-        lines.push(`降雨概率：${probability == null ? '未提供' : `${probability}%`}`);
-        lines.push(probability >= 50 || /雨|雷/.test(day.condition) ? '建议留意天气并携带雨具。' : '当前预报显示降雨可能较低。');
-      } else if (parsed.type === 'snow') {
-        const probability = day.snowProbability;
-        lines.push(`降雪概率：${probability == null ? '未提供' : `${probability}%`}`);
-        lines.push(probability >= 30 || /雪/.test(day.condition) ? '可能降雪，留意道路湿滑。' : '当前预报显示降雪可能较低。');
-      } else if (parsed.type === 'temperature') {
-        lines.push(`最高 ${day.high ?? '—'}°C，最低 ${day.low ?? '—'}°C。`);
-      } else {
-        lines.push(`降雨概率 ${day.rainProbability ?? '—'}% · 降雪概率 ${day.snowProbability ?? '—'}%`);
-      }
-      return sendInfo(e, `${location.name}${dayLabel}天气`, lines);
     } catch (error) { return sendError(e, error); }
   }
 
@@ -497,6 +589,12 @@ export class WeatherPanel extends plugin {
         if (!weatherCache.has(key)) weatherCache.set(key, getWeather(location, fetch, weatherSettings));
         return weatherCache.get(key);
       };
+      const warningCache = new Map();
+      const warningsFor = location => {
+        const key = `${location.latitude}:${location.longitude}`;
+        if (!warningCache.has(key)) warningCache.set(key, getWeatherAlerts(location, fetch, weatherSettings));
+        return warningCache.get(key);
+      };
       const now = Date.now();
       const checkAlerts = now - WeatherPanel.lastAlertCheck >= 15 * 60 * 1000;
       if (checkAlerts) WeatherPanel.lastAlertCheck = now;
@@ -541,23 +639,46 @@ export class WeatherPanel extends plugin {
             preferences = await preferencesStore.set(target, { [dateKey]: local.date });
           }
 
-          if (!checkAlerts || (!preferences.rainAlerts && !preferences.snowAlerts)) continue;
-          const weather = await weatherFor(location);
-          for (const type of ['rain', 'snow']) {
-            const enabled = type === 'rain' ? preferences.rainAlerts : preferences.snowAlerts;
-            const timeKey = type === 'rain' ? 'lastRainAlertAt' : 'lastSnowAlertAt';
-            if (!enabled || (Number(preferences[timeKey]) && now - Number(preferences[timeKey]) < 8 * 60 * 60 * 1000)) continue;
-            const event = precipitationSummary(weather, type);
-            if (!event) continue;
-            const name = type === 'rain' ? '降雨' : '降雪';
-            const probability = type === 'rain' ? event.rainProbability : event.snowProbability;
-            const image = segment.image(await imageOfInfo(`${location.name}${name}提醒`, [
-              `未来24小时预报有${name}：${event.time} ${event.condition}。`,
-              `${name}概率：${probability == null ? '未提供' : `${probability}%`}`,
-              type === 'rain' ? '出行前留意降雨变化，建议携带雨具。' : '出行时留意降雪、结冰和道路湿滑。',
-            ]));
-            await sendToChat(target, image);
-            preferences = await preferencesStore.set(target, { [timeKey]: now });
+          if (!checkAlerts) continue;
+          if (preferences.rainAlerts || preferences.snowAlerts) {
+            try {
+              const weather = await weatherFor(location);
+              for (const type of ['rain', 'snow']) {
+                const enabled = type === 'rain' ? preferences.rainAlerts : preferences.snowAlerts;
+                const timeKey = type === 'rain' ? 'lastRainAlertAt' : 'lastSnowAlertAt';
+                if (!enabled || (Number(preferences[timeKey]) && now - Number(preferences[timeKey]) < 8 * 60 * 60 * 1000)) continue;
+                const event = precipitationSummary(weather, type);
+                if (!event) continue;
+                const name = type === 'rain' ? '降雨' : '降雪';
+                const probability = type === 'rain' ? event.rainProbability : event.snowProbability;
+                const image = segment.image(await imageOfInfo(`${location.name}${name}提醒`, [
+                  `未来24小时预报有${name}：${event.time} ${event.condition}。`,
+                  `${name}概率：${probability == null ? '未提供' : `${probability}%`}`,
+                  type === 'rain' ? '出行前留意降雨变化，建议携带雨具。' : '出行时留意降雪、结冰和道路湿滑。',
+                ]));
+                await sendToChat(target, image);
+                preferences = await preferencesStore.set(target, { [timeKey]: now });
+              }
+            } catch (error) {
+              logger.error(`[天气插件] 降水提醒查询失败 ${target.type}:${target.targetId}`, error);
+            }
+          }
+
+          if (preferences.severeAlerts) {
+            try {
+              const alerts = await warningsFor(location);
+              const seen = new Set(Array.isArray(preferences.lastSevereAlertKeys) ? preferences.lastSevereAlertKeys : []);
+              const fresh = alerts.filter(alert => !seen.has(alert.key));
+              if (fresh.length) {
+                const image = segment.image(await imageOfInfo(`${location.name}气象预警`, weatherWarningLines(fresh, location), weatherAlertSourceNote));
+                await sendToChat(target, image);
+                preferences = await preferencesStore.set(target, {
+                  lastSevereAlertKeys: [...seen, ...fresh.map(alert => alert.key)].slice(-100),
+                });
+              }
+            } catch (error) {
+              logger.error(`[天气插件] 气象预警推送失败 ${target.type}:${target.targetId}`, error);
+            }
           }
         } catch (error) { logger.error(`[天气插件] 定时天气任务失败 ${target.type}:${target.targetId}`, error); }
       }

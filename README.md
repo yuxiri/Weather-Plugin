@@ -32,13 +32,14 @@ git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-
 | `#绑定城市 重庆` / `#解绑城市` | 设置或解除当前会话的默认城市 |
 | `#天气提醒` | 查看降雨、降雪提醒状态 |
 | `#开启降雨提醒` / `#开启降雪提醒` | 开启未来24小时天气提醒；用 `#关闭降雨提醒` / `#关闭降雪提醒` 停用 |
+| `#天气预警 北京` | 查询该城市当前生效的政府气象预警 |
+| `#开启预警提醒` / `#关闭预警提醒` | 推送或停止推送新发布的气象预警 |
 | `#生活指数` | 查看出行、穿衣、防晒等建议 |
 | `#24小时预报` | 查看未来逐小时预报 |
 | `#设置天气早报 07:00` / `#设置天气晚报 20:00` | 设置每日简报时间；用 `#关闭天气早报` / `#关闭天气晚报` 停用 |
 | `#天气对比 重庆/北京/上海` | 对比 2 至 4 个城市的天气 |
 | `#天气主题 ocean` | 选择 `ocean`、`sunset` 或 `night` 卡片主题 |
 | `#天气设置帮助` | 查看数据源、简报和 API 的设置说明 |
-| `重庆明天会下雨吗` | 自然语言查询天气、降雨或降雪预报 |
 | `#天气源` | 查看当前天气数据源 |
 | `#切换天气源 <open-meteo/bing/weatherapi>` | 选择一种数据源，例如 `#切换天气源 bing`（仅机器人主人） |
 | 私聊 `#设置天气API <API Key>` | 设置 WeatherAPI 密钥（仅机器人主人） |
@@ -69,6 +70,8 @@ Bing 天气（MSN）为默认数据源，无需 API Key。使用 WeatherAPI.com 
 
 密钥保存后发送 `#切换天气源 WeatherAPI` 即可使用该来源。Open-Meteo 也可手动切换；城市名称和坐标由 Open-Meteo 与 Photon 地理编码接口解析。
 
+Bing/MSN 页面提供预警数据时，可直接使用 `#天气预警 北京` 查询和 `#开启预警提醒` 接收新预警，无需额外 API Key。若 Bing/MSN 暂无可读预警数据，可配置上方的 WeatherAPI API Key 作为备用预警源；天气预报来源无需切换。预警类型包括雷暴、暴雨、大雾、大风、台风等，具体取决于预警数据覆盖地区。
+
 ## 数据说明
 
 - 天气预报源可选 [Bing 天气（MSN）](https://www.msn.cn/zh-cn/weather/forecast/in-%E5%8C%97%E4%BA%AC%E5%B8%82)、[Open-Meteo](https://open-meteo.com/en/docs) 或 [WeatherAPI.com](https://www.weatherapi.com/docs/)。Bing 天气（MSN）为默认来源。
@@ -76,6 +79,7 @@ Bing 天气（MSN）为默认数据源，无需 API Key。使用 WeatherAPI.com 
 - 区县可直接查询，例如 `#天气 昌平区`、`#天气 昆山市`；若有同名区县，可补充上级城市，例如 `#天气 长安区,西安`。
 - 空气质量数据由当前所选天气源提供；接口暂不可用时，天气图片仍可生成，并显示“未提供”。
 - 降雨、降雪提醒根据所选来源的未来24小时概率和天气状况判断；来源不提供概率时会显示“未提供”。
+- 气象预警优先读取 Bing/MSN 的预警数据，无法读取时可用 WeatherAPI 官方机构预警数据作为备用；覆盖范围、类型和更新情况以来源数据为准。
 - 生活指数优先使用来源提供的数据；缺少时按天气、温度、紫外线和降水信息生成通用建议。
 - 城市可写作 `城市,国家代码`，例如 `东京,JP`、`巴黎,FR`。北京、东京、洛杉矶的常见中文名已内置识别。
 - 订阅保存在 Yunzai 根目录的 `data/weather-panel/subscriptions.json`。
@@ -88,7 +92,7 @@ Bing 天气（MSN）为默认数据源，无需 API Key。使用 WeatherAPI.com 
 - `lib/weather.js`：城市解析、天气请求和数据整理。
 - `lib/subscriptions.js`：订阅数据读写。
 - `lib/settings.js`：全局数据源设置。
-- `lib/preferences.js`：默认城市、预警、早晚报和主题设置。
+- `lib/preferences.js`：默认城市、降水提醒、气象预警、早晚报和主题设置。
 - `resources/weather.html`：天气图片模板。
 - `resources/info.html`：结果图片模板。
 
