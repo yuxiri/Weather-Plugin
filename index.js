@@ -1,5 +1,6 @@
 import renderer from '../../lib/renderer/loader.js';
 import { segment } from 'oicq';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getWeather, localDateTime, resolveCity } from './lib/weather.js';
@@ -12,13 +13,33 @@ const store = new SubscriptionStore();
 const settingsStore = new WeatherSettingsStore();
 const preferencesStore = new ChatPreferencesStore();
 const root = fileURLToPath(new URL('./resources/', import.meta.url));
+const rendererNamespace = 'yunzai-weather-plugin';
+const rendererFontPath = path.resolve('./temp/html', rendererNamespace, 'MiSansVF.ttf');
 const chat = e => ({ botId: String(e.self_id), type: e.isGroup ? 'group' : 'private', targetId: String(e.isGroup ? e.group_id : e.user_id) });
 const weatherSourceName = source => source === 'weatherapi' ? 'WeatherAPI.com' : source === 'bing' ? 'Bing 天气（MSN）' : 'Open-Meteo';
 
+let rendererFontCopy;
+async function ensureRendererFont() {
+  if (rendererFontCopy) return rendererFontCopy;
+  rendererFontCopy = (async () => {
+    const source = path.join(root, 'MiSansVF.ttf');
+    const sourceStat = await fs.stat(source);
+    await fs.mkdir(path.dirname(rendererFontPath), { recursive: true });
+    try {
+      const targetStat = await fs.stat(rendererFontPath);
+      if (targetStat.size === sourceStat.size) return;
+    } catch {}
+    await fs.copyFile(source, rendererFontPath);
+  })();
+  try { await rendererFontCopy; }
+  finally { rendererFontCopy = null; }
+}
+
 async function imageOfWeather(location, weatherSettings = null, theme = 'ocean', weatherData = null) {
+  await ensureRendererFont();
   const selectedSettings = weatherSettings || await settingsStore.get();
   const data = weatherData || await getWeather(location, fetch, selectedSettings);
-  const image = await renderer.render('yunzai-weather-plugin', {
+  const image = await renderer.render(rendererNamespace, {
     saveId: 'weather', tplFile: path.join(root, 'weather.html'), ...weatherView(data, theme), imgType: 'png',
   });
   if (image) return image;
@@ -33,8 +54,9 @@ async function imageOfWeather(location, weatherSettings = null, theme = 'ocean',
 }
 
 async function imageOfInfo(title, lines) {
+  await ensureRendererFont();
   const weatherSettings = await settingsStore.get();
-  const image = await renderer.render('yunzai-weather-plugin', {
+  const image = await renderer.render(rendererNamespace, {
     saveId: 'info', tplFile: path.join(root, 'info.html'), title, lines,
     sourceNote: `天气数据由 ${weatherSourceName(weatherSettings.source)} 提供`,
     imgType: 'png',
