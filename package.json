@@ -1,9 +1,9 @@
 {
-  "name": "yunzai-weather-plugin",
+  "name": "weather-plugin",
   "version": "1.1.7",
   "license": "MIT",
   "private": true,
   "type": "module",
-  "description": "Yunzai 天气预报、降水提醒、生活指数与每日图片推送",
+  "description": "天气预报、气象预警、生活指数与每日图片推送",
   "engines": { "node": ">=23.11" }
 }

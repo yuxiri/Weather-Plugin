@@ -1,10 +1,10 @@
-## Yunzai 天气插件
+## Weather Plugin
 
 本插件由 GPT 生成
 
 ## 安装
 
-在 Yunzai 根目录执行以下命令之一：
+在机器人框架根目录执行以下命令之一：
 
 从 Gitee 安装：
 
@@ -15,7 +15,7 @@ git clone https://gitee.com/cloud-star-dot/Yunzai-Weather-Plugin.git ./plugins/w
 从 GitHub 安装：
 
 ```bash
-git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-plugin
+git clone https://github.com/yuxiri/Weather-Plugin.git ./plugins/weather-plugin
 ```
 
 确认图片渲染器可用，并能访问所选天气数据源。然后重启即可，无需为插件单独安装 npm 依赖。
@@ -55,11 +55,11 @@ git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-
 
 ### 使用 Bing 天气
 
-发送 `#切换天气源 Bing` 后，插件会先用城市名查询 Bing 搜索结果，再读取对应的 MSN 天气预报页面，并使用页面提供的当前天气、逐小时天气和多日预报生成图片。该来源无需 API Key；Yunzai 所在服务器需要能够访问 Bing 和 MSN 天气页面。
+发送 `#切换天气源 Bing` 后，插件会先用城市名查询 Bing 搜索结果，再读取对应的 MSN 天气预报页面，并使用页面提供的当前天气、逐小时天气和多日预报生成图片。该来源无需 API Key；机器人框架所在服务器需要能够访问 Bing 和 MSN 天气页面。
 
 ### 配置 WeatherAPI
 
-Bing 天气（MSN）为默认数据源，无需 API Key。使用 WeatherAPI.com 前，先在 [WeatherAPI.com](https://www.weatherapi.com/signup.aspx) 申请 API Key。机器人主人可私聊机器人发送 `#设置天气API <API Key>` 保存密钥；插件会将密钥写入 Yunzai 根目录的 `data/weather-panel/settings.json`，回执不会显示密钥，群聊中的设置命令不会保存密钥。也可通过环境变量 `WEATHERAPI_KEY` 配置，或手动在 `data/weather-panel/settings.json` 中填写：
+Bing 天气（MSN）为默认数据源，无需 API Key。使用 WeatherAPI.com 前，先在 [WeatherAPI.com](https://www.weatherapi.com/signup.aspx) 申请 API Key。机器人主人可私聊机器人发送 `#设置天气API <API Key>` 保存密钥；插件会将密钥写入机器人框架根目录的 `data/weather-panel/settings.json`，回执不会显示密钥，群聊中的设置命令不会保存密钥。也可通过环境变量 `WEATHERAPI_KEY` 配置，或手动在 `data/weather-panel/settings.json` 中填写：
 
 ```json
 {
@@ -82,13 +82,13 @@ Bing/MSN 页面提供预警数据时，可直接使用 `#天气预警 北京` �
 - 气象预警优先读取 Bing/MSN 的预警数据，无法读取时可用 WeatherAPI 官方机构预警数据作为备用；覆盖范围、类型和更新情况以来源数据为准。
 - 生活指数优先使用来源提供的数据；缺少时按天气、温度、紫外线和降水信息生成通用建议。
 - 城市可写作 `城市,国家代码`，例如 `东京,JP`、`巴黎,FR`。北京、东京、洛杉矶的常见中文名已内置识别。
-- 订阅保存在 Yunzai 根目录的 `data/weather-panel/subscriptions.json`。
-- 默认城市、提醒、早晚报和主题保存在 Yunzai 根目录的 `data/weather-panel/preferences.json`；群内设置需群管理员权限。
+- 订阅保存在机器人框架根目录的 `data/weather-panel/subscriptions.json`。
+- 默认城市、提醒、早晚报和主题保存在机器人框架根目录的 `data/weather-panel/preferences.json`；群内设置需群管理员权限。
 - 数据源设置保存在 `data/weather-panel/settings.json`；WeatherAPI 密钥也可通过 `WEATHERAPI_KEY` 环境变量提供。
 
 ## 文件结构
 
-- `index.js`：Yunzai 指令和每日推送任务。
+- `index.js`：插件指令和每日推送任务。
 - `lib/weather.js`：城市解析、天气请求和数据整理。
 - `lib/subscriptions.js`：订阅数据读写。
 - `lib/settings.js`：全局数据源设置。

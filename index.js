@@ -13,7 +13,7 @@ const store = new SubscriptionStore();
 const settingsStore = new WeatherSettingsStore();
 const preferencesStore = new ChatPreferencesStore();
 const root = fileURLToPath(new URL('./resources/', import.meta.url));
-const rendererNamespace = 'yunzai-weather-plugin';
+const rendererNamespace = 'weather-plugin';
 const rendererFontPath = path.resolve('./temp/html', rendererNamespace, 'MiSansVF.ttf');
 const chat = e => ({ botId: String(e.self_id), type: e.isGroup ? 'group' : 'private', targetId: String(e.isGroup ? e.group_id : e.user_id) });
 const weatherSourceName = source => source === 'weatherapi' ? 'WeatherAPI.com' : source === 'bing' ? 'Bing 天气（MSN）' : 'Open-Meteo';
@@ -499,7 +499,7 @@ export class WeatherPanel extends plugin {
       if (source === 'weatherapi' && !current.weatherApiKey) {
         return sendInfo(e, '尚未配置 WeatherAPI 密钥', [
           '先申请 WeatherAPI API Key：https://www.weatherapi.com/signup.aspx',
-          '然后设置环境变量 WEATHERAPI_KEY，或在 Yunzai 根目录 data/weather-panel/settings.json 中填写 weatherApiKey。',
+          '然后设置环境变量 WEATHERAPI_KEY，或在机器人框架根目录 data/weather-panel/settings.json 中填写 weatherApiKey。',
           '密钥配置后再发送 #切换天气源 WeatherAPI。',
         ]);
       }
@@ -529,7 +529,7 @@ export class WeatherPanel extends plugin {
     try {
       await settingsStore.setWeatherApiKey(apiKey);
       return sendInfo(e, 'WeatherAPI 密钥已保存', [
-        '密钥已写入 Yunzai 根目录 data/weather-panel/settings.json。',
+        '密钥已写入机器人框架根目录 data/weather-panel/settings.json。',
         '为保护密钥，回执不会显示密钥内容。',
         '发送 #切换天气源 WeatherAPI 即可使用。',
       ]);
