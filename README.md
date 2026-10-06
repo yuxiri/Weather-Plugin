@@ -9,7 +9,7 @@
 从 Gitee 安装：
 
 ```bash
-git clone https://gitee.com/cloud-star-dot/Yunzai-Weather-Plugin.git ./plugins/weather-plugin
+git clone https://gitee.com/cloud-star-dot/Weather-Plugin.git ./plugins/weather-plugin
 ```
 
 从 GitHub 安装：
