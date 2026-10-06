@@ -20,8 +20,6 @@ git clone https://github.com/yuxiri/Yunzai-Weather-Plugin.git ./plugins/weather-
 
 确认图片渲染器可用，并能访问所选天气数据源。然后重启即可，无需为插件单独安装 npm 依赖。
 
-天气卡片和帮助图片优先使用 MiSans。请在运行图片渲染器的系统中安装 [MiSans 字体](https://hyperos.mi.com/font/zh/download/)；未安装时会回退到系统字体。插件不包含字体文件。
-
 ## 指令
 
 | 指令 | 功能 |
