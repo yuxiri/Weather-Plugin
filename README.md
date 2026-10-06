@@ -1,6 +1,6 @@
 ## Weather Plugin
 
-本插件由 GPT 生成，适用于Yunzai
+本插件由 GPT 生成
 
 ## 安装
 
@@ -25,9 +25,8 @@ git clone https://github.com/yuxiri/Weather-Plugin.git ./plugins/weather-plugin
 | 指令 | 功能 |
 |---|---|
 | `#天气帮助` | 发送图片版帮助 |
-| `#天气 北京` | 查询指定城市或区县天气 |
-| `#天气 昌平区,北京` / `#天气 渝中区,重庆` | 查询区县；同名区县请补充所属城市 |
-| `#查询天气 东京` | 查询指定城市或区县天气 |
+| `#天气 北京` | 查询指定城市天气 |
+| `#查询天气 东京` | 查询指定城市天气 |
 | `#天气 东京,JP` | 用国家代码区分同名城市 |
 | `#绑定城市 重庆` / `#解绑城市` | 设置或解除当前会话的默认城市 |
 | `#天气提醒` | 查看降雨、降雪提醒状态 |
@@ -68,15 +67,15 @@ Bing 天气（MSN）为默认数据源，无需 API Key。使用 WeatherAPI.com 
 }
 ```
 
-密钥保存后发送 `#切换天气源 WeatherAPI` 即可使用该来源。Open-Meteo 也可手动切换；城市名称和坐标由 Open-Meteo 与 Photon 地理编码接口解析。
+密钥保存后发送 `#切换天气源 WeatherAPI` 即可使用该来源。Open-Meteo 也可手动切换；国内地名由 Open-Meteo 解析，海外地点可由 Open-Meteo 或 Photon 解析。
 
 Bing/MSN 页面提供预警数据时，可直接使用 `#天气预警 北京` 查询和 `#开启预警提醒` 接收新预警，无需额外 API Key。若 Bing/MSN 暂无可读预警数据，可配置上方的 WeatherAPI API Key 作为备用预警源；天气预报来源无需切换。预警类型包括雷暴、暴雨、大雾、大风、台风等，具体取决于预警数据覆盖地区。
 
 ## 数据说明
 
 - 天气预报源可选 [Bing 天气（MSN）](https://www.msn.cn/zh-cn/weather/forecast/in-%E5%8C%97%E4%BA%AC%E5%B8%82)、[Open-Meteo](https://open-meteo.com/en/docs) 或 [WeatherAPI.com](https://www.weatherapi.com/docs/)。Bing 天气（MSN）为默认来源。
-- 地理编码优先使用 [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api)；没有匹配到时使用 [Photon](https://photon.komoot.io/) 查询城市、区县和上级地区。Photon 结果缓存 90 天，缓存文件位于 `data/weather-panel/geocoding-cache.json`；请求间隔至少 1 秒。天气卡片会注明 [OpenStreetMap 署名](https://www.openstreetmap.org/copyright)。Photon 公共服务可能限流或暂时不可用。
-- 区县可直接查询，例如 `#天气 昌平区`、`#天气 昆山市`；若有同名区县，可补充上级城市，例如 `#天气 长安区,西安`。
+- 国内地名使用 [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api) 的地名层级筛选，只接受地级市及以上城市；区县、县级市不作为结果。海外城市在 Open-Meteo 未匹配时会使用 [Photon](https://photon.komoot.io/) 查询。地理编码结果缓存 90 天，缓存文件位于 `data/weather-panel/geocoding-cache.json`；Photon 请求间隔至少 1 秒。天气卡片会注明 [OpenStreetMap 署名](https://www.openstreetmap.org/copyright)。Photon 公共服务可能限流或暂时不可用。
+- 同名海外城市可补充国家代码，例如 `#天气 东京,JP`。
 - 空气质量数据由当前所选天气源提供；接口暂不可用时，天气图片仍可生成，并显示“未提供”。
 - 降雨、降雪提醒根据所选来源的未来24小时概率和天气状况判断；来源不提供概率时会显示“未提供”。
 - 气象预警优先读取 Bing/MSN 的预警数据，无法读取时可用 WeatherAPI 官方机构预警数据作为备用；覆盖范围、类型和更新情况以来源数据为准。

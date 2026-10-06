@@ -20,12 +20,14 @@ const weatherSourceName = source => source === 'weatherapi' ? 'WeatherAPI.com' :
 const weatherAlertSourceNote = '气象预警来源：Bing/MSN 页面预警数据，WeatherAPI 可备用';
 const helpCards = [
   {
-    tone: 'blue', icon: 'search', title: '查询天气', subtitle: '查询指定城市或区县的当前天气',
+    tone: 'blue', icon: 'search', title: '查询天气', subtitle: '查询指定城市的当前天气',
     rows: [
       { command: '#天气 北京', note: '查询北京天气' },
       { command: '#查询天气 东京', note: '也可直接查询任意城市' },
+      { command: '#国内天气 重庆', note: '仅查国内地级市及以上城市' },
+      { command: '#国外天气 东京', note: '仅查询中国境外' },
     ],
-    examples: ['区县示例：#天气 渝中区,重庆'],
+    examples: ['也可用 #天气 国内 重庆 / #天气 国外 东京'],
   },
   {
     tone: 'purple', icon: 'pin', title: '城市管理', subtitle: '设置或解除默认城市',
@@ -236,6 +238,7 @@ export class WeatherPanel extends plugin {
         { reg: '^#?(?:天气源|天气数据源|切换天气源|切换数据源)(?:\\s+.+)?$', fnc: 'source' },
         { reg: '^#?(?:取消天气订阅|退订天气)$', fnc: 'unsubscribe' },
         { reg: '^#?(?:订阅天气|天气订阅)(?:\\s+.+)?$', fnc: 'subscribe' },
+        { reg: '^#?(?:国内天气|国外天气|天气国内|天气国外)(?:\\s+.+)?$', fnc: 'regionalQuery' },
         { reg: '^#?(?:天气|查询天气)(?:\\s+.+)?$', fnc: 'query' },
       ],
       task: { name: '天气每日图片推送', cron: '0 * * * * *', fnc: () => WeatherPanel.pushDaily(), log: false },
@@ -246,7 +249,7 @@ export class WeatherPanel extends plugin {
     try { return await e.reply(segment.image(await imageOfHelp())); }
     catch (error) {
       logger.error('[天气插件] 帮助图片渲染失败', error);
-      return e.reply('天气插件帮助\n#天气 北京 / #查询天气 东京　查询城市或区县天气\n#绑定城市 重庆 / #解绑城市　设置或解除默认城市\n#生活指数 北京　查看生活建议\n#24小时预报 北京　查看未来逐小时天气\n#天气对比 重庆/北京/上海　对比多个城市\n#开启降雨提醒 / #开启降雪提醒　开启天气提醒\n#天气预警 北京　查询当前生效的气象预警\n#开启预警提醒 / #关闭预警提醒　每条新预警推送一次\n#订阅天气 北京 07:30 / #取消天气订阅　每日推送或取消\n#天气主题 ocean　切换卡片主题\n#天气设置帮助　查看数据源、早晚报和 API 设置');
+      return e.reply('天气插件帮助\n#天气 北京 / #查询天气 东京　查询城市天气\n#绑定城市 重庆 / #解绑城市　设置或解除默认城市\n#生活指数 北京　查看生活建议\n#24小时预报 北京　查看未来逐小时天气\n#天气对比 重庆/北京/上海　对比多个城市\n#开启降雨提醒 / #开启降雪提醒　开启天气提醒\n#天气预警 北京　查询当前生效的气象预警\n#开启预警提醒 / #关闭预警提醒　每条新预警推送一次\n#订阅天气 北京 07:30 / #取消天气订阅　每日推送或取消\n#天气主题 ocean　切换卡片主题\n#天气设置帮助　查看数据源、早晚报和 API 设置');
     }
   }
 
@@ -269,11 +272,30 @@ export class WeatherPanel extends plugin {
 
   async query(e) {
     const arg = e.msg.replace(/^#?(?:天气|查询天气)/, '').trim();
+    const nestedScope = arg.match(/^(国内|国外)\s+(.+)$/);
+    const city = nestedScope ? nestedScope[2].trim() : arg;
+    const scope = nestedScope?.[1] === '国内' ? 'domestic' : nestedScope?.[1] === '国外' ? 'foreign' : 'any';
     try {
       const target = chat(e);
       const preferences = await preferencesStore.get(target);
-      const location = arg ? await resolveCity(arg) : await locationForChat(target, preferences);
+      const location = city ? await resolveCity(city, fetch, { scope }) : await locationForChat(target, preferences);
       if (!location) return this.help(e);
+      return await e.reply(segment.image(await imageOfWeather(location, null, preferences.theme)));
+    } catch (error) { return sendError(e, error); }
+  }
+
+  async regionalQuery(e) {
+    const isDomestic = /^#?(?:国内天气|天气国内)/.test(e.msg);
+    const city = e.msg.replace(/^#?(?:国内天气|国外天气|天气国内|天气国外)/, '').trim();
+    if (!city) return sendInfo(e, '国内 / 国外天气查询', [
+      '#国内天气 重庆　只查国内地级市及以上城市',
+      '#国外天气 东京　只查中国境外地点',
+      '也可发送 #天气 国内 重庆 / #天气 国外 东京。',
+    ]);
+    try {
+      const target = chat(e);
+      const preferences = await preferencesStore.get(target);
+      const location = await resolveCity(city, fetch, { scope: isDomestic ? 'domestic' : 'foreign' });
       return await e.reply(segment.image(await imageOfWeather(location, null, preferences.theme)));
     } catch (error) { return sendError(e, error); }
   }
