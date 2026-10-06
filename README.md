@@ -1,6 +1,6 @@
 ## Weather Plugin
 
-本插件由 GPT 生成
+本插件由 GPT 生成，适用于Yunzai
 
 ## 安装
 
