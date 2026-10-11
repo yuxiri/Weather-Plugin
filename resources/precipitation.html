@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+@font-face{font-family:MiSans;src:url("./MiSansVF.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+*{box-sizing:border-box}
+body{width:1024px;margin:0;background:#f4f8fb;color:#142c42;font-family:MiSans,"Microsoft YaHei",Arial,sans-serif}
+#container{width:1024px;padding:18px 20px 20px;background:#f4f8fb}
+.hero{min-height:176px;display:flex;align-items:center;justify-content:space-between;gap:24px;overflow:hidden;border-radius:25px;padding:24px 36px;background:linear-gradient(112deg,#e9f6ff 0%,#e3f2fb 65%,#eef8fd 100%)}
+.hero-copy{min-width:0;flex:1}
+.eyebrow{color:#6b9bc1;font-size:13px;font-weight:700;letter-spacing:.08em}
+h1{max-width:790px;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:9px;margin:9px 0 6px;color:#102e4b;font-size:34px;font-weight:750;line-height:1.2;overflow-wrap:anywhere}
+.city-name{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.reminder-title{flex:0 0 auto;white-space:nowrap}
+.subtitle{margin:0;color:#5c7891;font-size:16px;font-weight:600;line-height:1.45}
+.weather-icon{flex:0 0 112px;width:112px;height:112px;display:flex;align-items:center;justify-content:center;border:1px solid #ffffffbb;border-radius:50%;background:#ffffff8c;box-shadow:0 8px 22px #6b9fc11c}
+.weather-icon svg{width:78px;height:78px}
+.forecast-panel{margin-top:14px;padding:22px;border:1px solid #e7eef4;border-radius:23px;background:#fff;box-shadow:0 6px 20px #4a6c8510}
+.data-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.data-card{min-width:0;min-height:158px;padding:19px 23px;border:1px solid #e6eef4;border-radius:18px;background:linear-gradient(145deg,#f5f9fc,#f9fbfd)}
+.data-label{color:#667f94;font-size:14px;font-weight:600;line-height:1.4}
+.data-value{margin-top:14px;color:#173c5b;font-size:37px;font-weight:750;line-height:1.1;overflow-wrap:anywhere}
+.data-sub{margin-top:8px;color:#6a8499;font-size:14px;line-height:1.4}
+.advice{margin-top:14px;padding:13px 17px;border-radius:14px;background:#eef7fd;color:#3b617d;font-size:15px;font-weight:600;line-height:1.5;overflow-wrap:anywhere}
+.period-list{margin-top:13px;padding:13px 16px;border:1px solid #e6eef4;border-radius:14px;background:#f8fbfd}
+.period-list-title{margin-bottom:8px;color:#667f94;font-size:13px;font-weight:650}
+.period-list-items{display:flex;flex-wrap:wrap;gap:7px}
+.period-chip{padding:6px 10px;border-radius:10px;background:#edf5fa;color:#45657e;font-size:13px;line-height:1.4}
+.coverage-note{margin-top:9px;color:#74889b;font-size:12px;line-height:1.45}
+.empty-state{min-height:96px;display:flex;align-items:center;padding:18px 22px;border:1px solid #dceaf3;border-radius:17px;background:#f3f9fd;color:#355c78;font-size:19px;font-weight:650;line-height:1.5;overflow-wrap:anywhere}
+.footer{margin:12px 4px 0;color:#70869a;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<div id="container">
+  <header class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">WEATHER / PRECIPITATION</div>
+      <h1><span class="city-name">{{cityName}}</span><span aria-hidden="true">·</span><span class="reminder-title">{{reminderTitle}}</span></h1>
+      <p class="subtitle">{{subtitle}}</p>
+    </div>
+    <div class="weather-icon" aria-hidden="true">{{@iconHtml}}</div>
+  </header>
+  <main class="forecast-panel">
+    {{if hasEvent}}
+    <section class="data-grid">
+      <div class="data-card">
+        <div class="data-label">{{timeLabel}}</div>
+        <div class="data-value">{{time}}</div>
+        <div class="data-sub">{{timePeriod}} · {{typeLabel}}</div>
+      </div>
+      <div class="data-card">
+        <div class="data-label">{{probabilityLabel}}</div>
+        <div class="data-value">{{probability}}</div>
+        <div class="data-sub">{{probabilityNote}}</div>
+      </div>
+    </section>
+    <div class="advice">{{advice}}</div>
+    {{@additionalPeriodsHtml}}
+    {{if coverageNote}}<div class="coverage-note">{{coverageNote}}</div>{{/if}}
+    {{/if}}
+    {{if showEmpty}}<div class="empty-state">{{emptyMessage}}</div>{{/if}}
+  </main>
+  <footer class="footer">{{sourceNote}}</footer>
+</div>
+</body>
+</html>

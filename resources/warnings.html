@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>气象预警</title>
+<style>
+@font-face{font-family:MiSans;src:url("./MiSansVF.ttf") format("truetype");font-style:normal;font-weight:100 900;font-display:swap}
+*{box-sizing:border-box}
+body{width:1024px;margin:0;background:#fff;color:#132c45;font-family:MiSans,"Microsoft YaHei",Arial,sans-serif}
+#container{width:1024px;padding:18px 20px 22px;background:#fff}
+.hero{min-height:164px;display:flex;align-items:center;justify-content:space-between;gap:28px;overflow:hidden;border-radius:25px;padding:24px 38px;background:linear-gradient(112deg,#eaf6ff 0%,#e4f2fc 65%,#eef8ff 100%)}
+.hero-copy{min-width:0;flex:1}
+.eyebrow{color:#6b9bc8;font-size:14px;font-weight:700;letter-spacing:.08em}
+h1{margin:10px 0 2px;color:#0c2e5c;font-size:34px;font-weight:750;line-height:1.18;overflow-wrap:anywhere}
+.hero-subtitle{margin:0 0 8px;color:#53799c;font-size:15px;font-weight:700;line-height:1.35}
+.hero-meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:#5e7894;font-size:14px;line-height:1.45}
+.hero-scope{margin-top:7px;color:#5e7894;font-size:12px;line-height:1.4}
+.hero-icon{flex:0 0 105px;width:105px;height:105px;display:flex;align-items:center;justify-content:center;border:1px solid #ffffffaa;border-radius:50%;background:#ffffff8a;color:#d79a30;font-size:53px;box-shadow:0 8px 24px #7ba9cf22}
+.warning-list{display:flex;flex-direction:column;gap:14px;margin-top:14px}
+.warning-card{overflow:hidden;border:1px solid var(--alert-border,#d8e5ef);border-left:7px solid var(--alert-accent,#7a97b1);border-radius:21px;padding:20px 24px 17px;background:linear-gradient(140deg,var(--alert-bg,#f2f7fb),#f8fbfd 78%)}
+.alert-red{--alert-bg:#fff3f1;--alert-border:#efd0ca;--alert-accent:#c75146}
+.alert-orange{--alert-bg:#fff5ed;--alert-border:#efd7c5;--alert-accent:#c8783d}
+.alert-yellow{--alert-bg:#fff9ea;--alert-border:#efe1b7;--alert-accent:#ac852b}
+.alert-blue{--alert-bg:#eff7ff;--alert-border:#d3e3f1;--alert-accent:#5285b2}
+.alert-neutral{--alert-bg:#f2f7fb;--alert-border:#d9e4ed;--alert-accent:#70889d}
+.warning-card-heading{display:flex;align-items:center;gap:15px;min-width:0}
+.warning-symbol{flex:0 0 54px;width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:17px;background:var(--alert-accent);color:#fff;font-size:27px}
+.warning-symbol svg{width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.warning-title-copy{min-width:0;flex:1}
+.warning-counter{color:var(--alert-accent);font-size:12px;font-weight:700;letter-spacing:.05em}
+h2{margin:3px 0 7px;color:#172f47;font-size:23px;font-weight:750;line-height:1.28;overflow-wrap:anywhere}
+.warning-tags{display:flex;flex-wrap:wrap;gap:7px}
+.warning-tags span{padding:3px 10px;border:1px solid var(--alert-border);border-radius:999px;background:#ffffff9c;color:var(--alert-accent);font-size:12px;font-weight:650;line-height:1.4}
+.warning-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:15px}
+.warning-meta-grid>div{min-width:0;display:flex;align-items:baseline;gap:10px;padding:9px 12px;border-radius:12px;background:#ffffffb8}
+.warning-meta-grid span{flex:0 0 auto;color:#6b8093;font-size:12px}
+.warning-meta-grid strong{min-width:0;color:#2b4259;font-size:13px;font-weight:600;line-height:1.45;overflow-wrap:anywhere}
+.warning-summary{margin-top:12px;padding:10px 13px;border-radius:12px;background:#ffffff9c;color:#4d647b;font-size:14px;font-weight:600;line-height:1.55;overflow-wrap:anywhere}
+.warning-section{margin-top:14px;padding:13px 15px 14px;border-radius:14px;background:#ffffffbc}
+.warning-section h3{margin:0 0 7px;color:#1e3a54;font-size:15px;font-weight:700;line-height:1.4}
+.warning-section p{margin:0;color:#354d64;font-size:14px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+.warning-section .missing-detail{color:#8292a1;font-style:normal}
+.defense-guide{border:1px solid #e1eaf0;background:#f9fcfe}
+.no-weather-alerts{display:flex;align-items:center;gap:14px;margin-top:14px;padding:17px 20px;border:1px solid #dce9e3;border-radius:18px;background:linear-gradient(135deg,#eff9f5,#f7fcf9)}
+.no-weather-alerts span{flex:0 0 34px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#dff2e8;color:#3d9b72;font-size:21px;font-weight:700;line-height:1}
+.no-weather-alerts strong{display:block;color:#244c3e;font-size:17px;line-height:1.35}
+.no-weather-alerts p{margin:3px 0 0;color:#688275;font-size:13px;line-height:1.45}
+.no-weather-alerts.is-partial{border-color:#ecdcb8;background:linear-gradient(135deg,#fff8e9,#fffcf4)}
+.no-weather-alerts.is-partial span{background:#f8edcf;color:#a87921}
+.no-weather-alerts.is-partial strong{color:#6b4e1c}
+.no-weather-alerts.is-partial p{color:#8c7347}
+.more-alerts{padding:12px 16px;border:1px solid #d8e6f1;border-radius:14px;background:#f1f7fb;color:#5d7890;font-size:13px;font-weight:600;line-height:1.5}
+.footer{margin:13px 4px 0;color:#72869a;font-size:12px;line-height:1.55;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<div id="container">
+  <header class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">WEATHER / ALERTS</div>
+      <h1>{{locationName}}</h1>
+      <div class="hero-subtitle">{{title}}</div>
+      <div class="hero-meta"><span>{{alertCountLabel}}</span><span>更新时间：{{updatedAt}}</span></div>
+      {{if scopeNote}}<div class="hero-scope">{{scopeNote}}</div>{{/if}}
+    </div>
+    <div class="hero-icon" aria-hidden="true">⚠</div>
+  </header>
+  <main class="warning-list">{{@warningCardsHtml}}</main>
+  <footer class="footer">{{sourceNote}}</footer>
+</div>
+</body>
+</html>

@@ -4,6 +4,7 @@
   "license": "MIT",
   "private": true,
   "type": "module",
+  "scripts": { "test": "node --test" },
   "description": "天气预报、气象预警、生活指数与每日图片推送",
   "engines": { "node": ">=23.11" }
 }
