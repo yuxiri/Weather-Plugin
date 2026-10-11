@@ -13,6 +13,13 @@ function hourlyRows(startLocal, count, build = () => ({ condition: '晴', precip
   });
 }
 
+function nearText(rows, now = new Date('2026-10-10T00:00:00.000Z'), timezone = 'Asia/Shanghai', condition = '晴') {
+  return weatherView({
+    city: '测试城市', updated: '', timezone, condition,
+    hourly24: rows, hourly: [], days: [], sourceNote: '',
+  }, 'ocean', null, now).nearPrecipitationText;
+}
+
 const knownDryForecast = hourlyRows('2026-10-10T17:00', 24, () => ({
   condition: '晴', precipitationProbability: 0, rainProbability: null, snowProbability: null,
 }));
@@ -198,7 +205,7 @@ test('near-two-hour trend excludes past samples and the 02:00 point outside a 23
     city: '北京', updated: '', timezone: 'Asia/Shanghai', condition: '晴', hourly24: rows,
     hourly: [], days: [], sourceNote: '',
   }, 'ocean', null, nowAt2309);
-  assert.equal(view.nearPrecipitationText, '未来两小时暂无明确降水预报');
+  assert.equal(view.nearPrecipitationText, '降水概率极低\n最高 0% · 明天 00:00');
   assert.doesNotMatch(view.nearPrecipitationText, /02:00|16%|88%/);
 });
 
@@ -209,10 +216,10 @@ test('near-two-hour trend reports missing coverage instead of claiming dry when 
     hourly24: [{ dateTime: '2026-10-11T02:00', condition: '多云', precipitationProbability: 16 }],
     hourly: [], days: [], sourceNote: '',
   }, 'ocean', null, nowAt2309);
-  assert.equal(view.nearPrecipitationText, '近两小时预报数据暂缺');
+  assert.equal(view.nearPrecipitationText, '暂无近两小时降水数据');
 });
 
-test('a small nonzero hourly probability is described as possible, not certain precipitation', () => {
+test('a small nonzero hourly probability is summarized as very low, not imminent precipitation', () => {
   const nowAt2309 = new Date('2026-10-10T15:09:00.000Z');
   const view = weatherView({
     city: '北京', updated: '', timezone: 'Asia/Shanghai', condition: '晴',
@@ -222,8 +229,78 @@ test('a small nonzero hourly probability is described as possible, not certain p
     ],
     hourly: [], days: [], sourceNote: '',
   }, 'ocean', null, nowAt2309);
-  assert.match(view.nearPrecipitationText, /有降水可能/);
+  assert.match(view.nearPrecipitationText, /^降水概率极低/);
   assert.match(view.nearPrecipitationText, /明天 00:00/);
   assert.match(view.nearPrecipitationText, /1%/);
   assert.doesNotMatch(view.nearPrecipitationText, /将降水|开始降水/);
+});
+
+test('near-two-hour probability bands include zero and use the requested boundaries', () => {
+  const cases = [
+    [0, '降水概率极低'], [3, '降水概率极低'], [5, '降水概率极低'], [9, '降水概率极低'],
+    [10, '降水可能性较低'], [29, '降水可能性较低'],
+    [30, '有一定降水可能'], [49, '有一定降水可能'],
+    [50, '降水可能性较高'], [69, '降水可能性较高'],
+    [70, '降水概率高'], [100, '降水概率高'],
+  ];
+  for (const [chance, phrase] of cases) {
+    const actual = nearText([
+      { dateTime: '2026-10-10T09:00', condition: '多云', precipitationProbability: chance },
+      { dateTime: '2026-10-10T10:00', condition: '多云', precipitationProbability: 0 },
+    ]);
+    assert.equal(actual.split('\n')[0], phrase, `probability ${chance}%`);
+    assert.match(actual, new RegExp(`最高 ${chance}% · 09:00`));
+  }
+});
+
+test('unknown precipitation type keeps general probability wording', () => {
+  const actual = nearText([
+    { dateTime: '2026-10-10T09:00', condition: '多云', precipitationProbability: 60 },
+    { dateTime: '2026-10-10T10:00', condition: '多云', precipitationProbability: 25 },
+  ]);
+  assert.equal(actual, '降水可能性较高\n最高 60% · 09:00');
+  assert.doesNotMatch(actual, /降雨|降雪|雨夹雪/);
+});
+
+test('partial probability data is labeled as known periods and invalid values are not treated as zero', () => {
+  const partial = nearText([
+    { dateTime: '2026-10-10T09:00', condition: '多云', precipitationProbability: 35 },
+    { dateTime: '2026-10-10T10:00', condition: '多云', precipitationProbability: null },
+  ]);
+  assert.equal(partial, '已知时段：有一定降水可能\n最高 35% · 09:00');
+  const missing = nearText([
+    { dateTime: '2026-10-10T09:00', condition: '多云', precipitationProbability: 'NaN' },
+    { dateTime: '2026-10-10T10:00', condition: '多云', precipitationProbability: 101 },
+  ]);
+  assert.equal(missing, '暂无近两小时降水数据');
+});
+
+test('explicit low-probability precipitation descriptions remain visible', () => {
+  const actual = nearText([
+    { dateTime: '2026-10-10T09:00', condition: '小雨', precipitationProbability: 5 },
+    { dateTime: '2026-10-10T10:00', condition: '多云', precipitationProbability: 3 },
+  ]);
+  assert.equal(actual, '预报有降雨 · 降水概率极低\n最高 5% · 09:00');
+});
+
+test('near-two-hour window uses the selected timezone across midnight and excludes later samples', () => {
+  const nowAtLocal2330 = new Date('2026-10-11T06:30:00.000Z'); // 23:30 in Los Angeles
+  const actual = nearText([
+    { dateTime: '2026-10-11T00:00', condition: '多云', precipitationProbability: 29 },
+    { dateTime: '2026-10-11T01:00', condition: '多云', precipitationProbability: 10 },
+    { dateTime: '2026-10-11T02:00', condition: '大雨', precipitationProbability: 100 },
+  ], nowAtLocal2330, 'America/Los_Angeles');
+  assert.equal(actual, '降水可能性较低\n最高 29% · 明天 00:00');
+  assert.doesNotMatch(actual, /02:00|100%|降雨/);
+});
+
+test('short trend text stays compact even when provider condition text is long', () => {
+  const actual = nearText([
+    { dateTime: '2026-10-10T09:00', condition: '局地短时强雷阵雨并伴有强风天气状况', precipitationProbability: 70 },
+    { dateTime: '2026-10-10T10:00', condition: '多云转阴有零星阵雨', precipitationProbability: 55 },
+  ]);
+  const lines = actual.split('\n');
+  assert.equal(lines.length, 2);
+  assert.ok(lines.every(line => line.length <= 22), `unexpectedly long card lines: ${lines.map(line => line.length).join(',')}`);
+  assert.equal(actual, '预报有降雨 · 降水概率高\n最高 70% · 09:00');
 });
