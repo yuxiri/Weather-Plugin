@@ -92,6 +92,23 @@ test('generic probability is not relabeled as a rain or snow probability', () =>
   assert.equal(independentTypeChances.probability, '降雨 55% · 降雪 46%');
 });
 
+test('unknown precipitation uses a neutral question-mark icon while typed rain keeps its rain icon', () => {
+  const unknown = precipitationReminderView(location, {}, {
+    dateTime: '2026-10-10T15:00', time: '15:00', precipitationProbability: 32,
+  }, 'bing', now);
+  assert.equal(unknown.title, '重庆 · 降水预报');
+  assert.match(unknown.iconHtml, /M46 38c1-5/);
+  assert.match(unknown.iconHtml, /<circle cx="52\.5" cy="58"/);
+  assert.doesNotMatch(unknown.iconHtml, /m34 65-5 10/);
+
+  const rain = precipitationReminderView(location, {}, {
+    dateTime: '2026-10-10T15:00', time: '15:00', condition: '小雨', precipitationProbability: 32,
+  }, 'bing', now);
+  assert.equal(rain.title, '重庆 · 降雨提醒');
+  assert.match(rain.iconHtml, /m34 65-5 10/);
+  assert.doesNotMatch(rain.iconHtml, /M46 38c1-5/);
+});
+
 test('missing time and probability stay explicit; no forecast is distinct from missing forecast data', () => {
   const missing = precipitationReminderView(location, {}, { condition: '小雨' }, 'bing', now);
   assert.equal(missing.time, '暂无数据');

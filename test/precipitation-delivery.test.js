@@ -96,3 +96,15 @@ test('a rain event is suppressed on repeated checks while a later independent ev
   assert.equal(shouldSendPrecipitationAlert(saved, 'rain', sameKey, now.getTime() + 60_000), false);
   assert.equal(shouldSendPrecipitationAlert(saved, 'rain', laterKey, now.getTime() + 60_000), true);
 });
+
+test('normalized rain/snow display metadata does not change alert thresholds, selection or event keys', () => {
+  const event = { dateTime: '2026-10-10T15:00', condition: '小雨', rainProbability: 70, precipitationType: 'rain' };
+  const normalized = { ...event, precipitationKind: 'rain', precipitationIntensity: 'light', icon: 'rainy-light' };
+  assert.equal(DEFAULT_RAIN_ALERT_THRESHOLD, 70);
+  assert.equal(precipitationSummary({ hourly24: [normalized] }, 'rain', now, timezone), normalized);
+  assert.equal(precipitationSummary({ hourly24: [event] }, 'rain', now, timezone), event);
+  assert.equal(
+    precipitationEventKey('rain', normalized, timezone),
+    precipitationEventKey('rain', event, timezone),
+  );
+});

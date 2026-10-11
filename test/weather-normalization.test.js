@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { formatBingWeather, formatWeather, formatWeatherApi, getWeather } from '../lib/weather.js';
 import { precipitationReminderView, weatherView } from '../lib/view.js';
+import { classifyPrecipitation } from '../lib/precipitation.js';
 
 const location = { name: '测试市', latitude: 31, longitude: 121, timezone: 'Asia/Shanghai' };
 
@@ -55,6 +57,16 @@ test('Open-Meteo keeps its general precipitation chance separate and preserves m
   assert.equal(weather.days[0].rainAmount, 0.4);
   assert.equal(weather.days[0].precipitationAmount, 0.6);
   assert.equal(weather.condition, '有雪');
+  assert.equal(weather.icon, 'snowy');
+  assert.equal(weather.days[0].icon, 'snowy');
+  assert.equal(weather.hourly24[0].icon, 'sleet');
+  assert.equal(weather.precipitationKind, 'snow');
+  assert.equal(weather.precipitationIntensity, 'light');
+  assert.equal(weather.displayCondition, '小阵雪');
+  assert.equal(weather.days[0].precipitationIntensity, 'light');
+  assert.equal(weather.hourly24[0].precipitationKind, 'mixed');
+  assert.equal(weather.hourly24[0].precipitationIntensity, 'unknown');
+  assert.equal(weather.hourly24[1].icon, 'cloudy');
   assert.equal(weather.days[1].condition, '天气状况未知');
   assert.match(weather.lifeIndices[0].detail, /雨雪/);
   const dry = openMeteoFixture();
@@ -165,6 +177,232 @@ test('MSN generic probability is not mislabeled, and source payload remains avai
   assert.equal(display.time, '10:00');
   assert.equal(display.probabilityLabel, '降水概率');
   assert.equal(display.probability, '16%');
+});
+
+test('ordinary weather icons distinguish snow, fog, thunder, sleet and hail across providers', () => {
+  const iconCases = [
+    ['小雪', 'snowy-light'], ['大雾', 'foggy'], ['雷雨', 'thunderstorm'],
+    ['雨夹雪', 'sleet'], ['冰雹', 'hail'],
+  ];
+
+  for (const [description, expected] of iconCases.slice(0, 3)) {
+    const open = openMeteoFixture();
+    const code = ({ 'snowy-light': 71, foggy: 45, thunderstorm: 95, sleet: 56, hail: 96 })[expected];
+    open.current.weather_code = code;
+    open.hourly.weather_code[0] = code;
+    open.daily.weather_code[0] = code;
+    open.hourly.rain.fill(0);
+    open.hourly.snowfall.fill(0);
+    open.daily.rain_sum.fill(0);
+    open.daily.snowfall_sum.fill(0);
+    const openData = formatWeather(location, open, {});
+    assert.equal(openData.icon, expected, `Open-Meteo current ${description}`);
+    assert.equal(openData.hourly24[0].icon, expected, `Open-Meteo hourly ${description}`);
+    assert.equal(openData.days[0].icon, expected, `Open-Meteo daily ${description}`);
+    assert.equal(weatherView(openData).icon, expected, `Open-Meteo rendered ${description}`);
+  }
+
+  const apiBase = {
+    location: { name: 'Test', localtime: '2026-10-10 08:00', tz_id: 'Asia/Shanghai' },
+    current: { last_updated: '2026-10-10 08:00', temp_c: 12, condition: { text: '未知', code: 1006 }, is_day: 1 },
+    forecast: { forecastday: [{ date: '2026-10-10', day: { maxtemp_c: 18, mintemp_c: 9, condition: { text: '未知', code: 1006 } },
+      astro: { sunrise: '06:00 AM', sunset: '06:00 PM' },
+      hour: [{ time: '2026-10-10 08:00', temp_c: 12, condition: { text: '未知', code: 1006 } }] }] },
+  };
+  const apiCodes = { snowy: 1066, foggy: 1135, thunderstorm: 1087, sleet: 1069, hail: 1237 };
+  for (const [expected, code] of Object.entries(apiCodes)) {
+    const sample = structuredClone(apiBase);
+    sample.current.condition.code = code;
+    sample.forecast.forecastday[0].day.condition.code = code;
+    sample.forecast.forecastday[0].hour[0].condition.code = code;
+    const apiData = formatWeatherApi(location, sample);
+    assert.equal(apiData.icon, expected, `WeatherAPI current ${expected}`);
+    assert.equal(apiData.hourly24[0].icon, expected, `WeatherAPI hourly ${expected}`);
+    assert.equal(apiData.days[0].icon, expected, `WeatherAPI daily ${expected}`);
+    assert.equal(weatherView(apiData).icon, expected, `WeatherAPI rendered ${expected}`);
+  }
+
+  const msnBase = {
+    currentCondition: { currentRaw: { created: '2026-10-10T08:00:00+08:00', temp: '12°C', cap: '晴', symbol: '01' } },
+    forecast: [{ almanac: { valid: '2026-10-10' }, highTemp: '18°C', lowTemp: '9°C', dayCap: '晴', daySymbol: '01',
+      hourly: [{ timeStr: '2026-10-10T09:00:00+08:00', temperature: '13°C', precipitation: '0%', cap: '晴', symbol: '01' }] }],
+  };
+  const msnCases = { '小雪': 'snowy-light', '大雾': 'foggy', '雷雨': 'thunderstorm', '雨夹雪': 'sleet', '冰雹': 'hail' };
+  for (const [description, expected] of Object.entries(msnCases)) {
+    const sample = structuredClone(msnBase);
+    sample.currentCondition.currentRaw.cap = description;
+    sample.forecast[0].dayCap = description;
+    sample.forecast[0].hourly[0].cap = description;
+    const msnData = formatBingWeather(location, sample);
+    assert.equal(msnData.icon, expected, `MSN current ${description}`);
+    assert.equal(msnData.hourly24[0].icon, expected, `MSN hourly ${description}`);
+    assert.equal(msnData.days[0].icon, expected, `MSN daily ${description}`);
+    assert.equal(weatherView(msnData).icon, expected, `MSN rendered ${description}`);
+  }
+});
+
+test('MSN Chinese and English rain/snow descriptions map to six intensity icons without rewriting condition text', () => {
+  const cases = [
+    ['小雨', 'rain', 'light', 'rainy-light'], ['中雨', 'rain', 'moderate', 'rainy-moderate'], ['暴雨', 'rain', 'heavy', 'rainy-heavy'],
+    ['小雪', 'snow', 'light', 'snowy-light'], ['中雪', 'snow', 'moderate', 'snowy-moderate'], ['暴雪', 'snow', 'heavy', 'snowy-heavy'],
+    ['Light rain', 'rain', 'light', 'rainy-light'], ['Moderate rain', 'rain', 'moderate', 'rainy-moderate'], ['Heavy rain', 'rain', 'heavy', 'rainy-heavy'],
+    ['Light snow', 'snow', 'light', 'snowy-light'], ['Moderate snow', 'snow', 'moderate', 'snowy-moderate'], ['Heavy snow', 'snow', 'heavy', 'snowy-heavy'],
+  ];
+  const base = {
+    currentCondition: { currentRaw: { created: '2026-10-10T08:00:00+08:00', temp: '12°C', cap: '晴', symbol: '01' } },
+    forecast: [{ almanac: { valid: '2026-10-10' }, highTemp: '18°C', lowTemp: '9°C', dayCap: '晴', daySymbol: '01',
+      hourly: [{ timeStr: '2026-10-10T09:00:00+08:00', temperature: '13°C', precipitation: '90%', cap: '晴', symbol: '01' }] }],
+  };
+  for (const [description, kind, intensity, icon] of cases) {
+    const raw = structuredClone(base);
+    raw.currentCondition.currentRaw.cap = description;
+    raw.forecast[0].dayCap = description;
+    raw.forecast[0].hourly[0].cap = description;
+    const weather = formatBingWeather(location, raw);
+    for (const row of [weather, weather.days[0], weather.hourly24[0]]) {
+      assert.equal(row.condition, description);
+      assert.equal(row.precipitationKind, kind);
+      assert.equal(row.precipitationIntensity, intensity);
+      assert.equal(row.icon, icon);
+    }
+    assert.equal(weatherView(weather).icon, icon);
+    assert.match(weatherView(weather).daysHtml, new RegExp(`href="#${icon}"`));
+  }
+});
+
+test('Open-Meteo WMO 61/63/65 and 71/73/75 map consistently across current, hourly and daily forecasts', () => {
+  const cases = [
+    [61, 'rain', 'light', 'rainy-light', '小雨'], [63, 'rain', 'moderate', 'rainy-moderate', '中雨'], [65, 'rain', 'heavy', 'rainy-heavy', '大雨'],
+    [71, 'snow', 'light', 'snowy-light', '小雪'], [73, 'snow', 'moderate', 'snowy-moderate', '中雪'], [75, 'snow', 'heavy', 'snowy-heavy', '大雪'],
+  ];
+  for (const [code, kind, intensity, icon, description] of cases) {
+    const raw = openMeteoFixture();
+    raw.current.weather_code = code;
+    raw.hourly.weather_code.fill(code);
+    raw.daily.weather_code.fill(code);
+    raw.hourly.rain.fill(0);
+    raw.hourly.snowfall.fill(0);
+    raw.daily.rain_sum.fill(0);
+    raw.daily.snowfall_sum.fill(0);
+    const weather = formatWeather(location, raw, {});
+    for (const row of [weather, weather.days[0], weather.hourly24[0]]) {
+      assert.equal(row.precipitationKind, kind, `WMO ${code} kind`);
+      assert.equal(row.precipitationIntensity, intensity, `WMO ${code} intensity`);
+      assert.equal(row.icon, icon, `WMO ${code} icon`);
+      assert.equal(row.displayCondition, description, `WMO ${code} description`);
+    }
+    assert.equal(weatherView(weather).condition, description);
+    assert.equal(weatherView(weather).icon, icon);
+    assert.match(weatherView(weather).daysHtml, new RegExp(`href="#${icon}"`));
+    assert.equal(weather.condition, kind === 'rain' ? '有雨' : '有雪');
+  }
+});
+
+test('Open-Meteo special WMO phenomena retain their descriptions and do not receive ordinary intensity icons', () => {
+  const cases = [
+    [51, '毛毛雨', 'rainy'], [80, '小阵雨', 'rainy'], [85, '小阵雪', 'snowy'],
+    [95, '雷雨', 'thunderstorm'], [96, '雷暴伴小冰雹', 'thunderstorm'], [97, '强雷暴', 'thunderstorm'], [99, '雷暴伴大冰雹', 'thunderstorm'],
+  ];
+  for (const [code, description, icon] of cases) {
+    const raw = openMeteoFixture();
+    raw.current.weather_code = code;
+    raw.hourly.weather_code.fill(code);
+    raw.daily.weather_code.fill(code);
+    raw.hourly.rain.fill(0);
+    raw.hourly.snowfall.fill(0);
+    raw.daily.rain_sum.fill(0);
+    raw.daily.snowfall_sum.fill(0);
+    const weather = formatWeather(location, raw, {});
+    assert.equal(weather.displayCondition, description);
+    assert.equal(weather.icon, icon);
+    assert.equal(weather.hourly24[0].icon, icon);
+    assert.equal(weather.days[0].icon, icon);
+    if (code === 97) {
+      assert.equal(weather.condition, '天气状况未知');
+      assert.equal(weather.precipitationKind, 'unknown');
+    }
+  }
+});
+
+test('WeatherAPI explicit condition codes map six intensity icons in current, hourly and daily data', () => {
+  const cases = [
+    [1180, 'Patchy light rain', 'rain', 'light', 'rainy-light'],
+    [1186, 'Moderate rain at times', 'rain', 'moderate', 'rainy-moderate'],
+    [1195, 'Heavy rain', 'rain', 'heavy', 'rainy-heavy'],
+    [1210, 'Patchy light snow', 'snow', 'light', 'snowy-light'],
+    [1216, 'Patchy moderate snow', 'snow', 'moderate', 'snowy-moderate'],
+    [1225, 'Heavy snow', 'snow', 'heavy', 'snowy-heavy'],
+  ];
+  for (const [code, description, kind, intensity, icon] of cases) {
+    const forecast = {
+      location: { name: 'Test', localtime: '2026-10-10 08:00', tz_id: 'Asia/Shanghai' },
+      current: { last_updated: '2026-10-10 08:00', temp_c: 12, condition: { text: description, code }, is_day: 1 },
+      forecast: { forecastday: [{ date: '2026-10-10', day: {
+        maxtemp_c: 18, mintemp_c: 9, condition: { text: description, code },
+      }, astro: { sunrise: '06:00 AM', sunset: '06:00 PM' }, hour: [{
+        time: '2026-10-10 08:00', temp_c: 12, condition: { text: description, code }, chance_of_rain: 90, chance_of_snow: 90,
+      }] }] },
+    };
+    const weather = formatWeatherApi(location, forecast);
+    for (const row of [weather, weather.days[0], weather.hourly24[0]]) {
+      assert.equal(row.precipitationKind, kind, `WeatherAPI ${code} kind`);
+      assert.equal(row.precipitationIntensity, intensity, `WeatherAPI ${code} intensity`);
+      assert.equal(row.icon, icon, `WeatherAPI ${code} icon`);
+    }
+    assert.equal(weatherView(weather).icon, icon);
+    assert.match(weatherView(weather).daysHtml, new RegExp(`href="#${icon}"`));
+    assert.equal(weather.condition, description);
+  }
+});
+
+test('special precipitation stays on its specific icon and probabilities never determine intensity', () => {
+  const specialCases = [
+    ['毛毛雨', 'open-meteo', 51, 'rain', 'light'],
+    ['阵雨', 'open-meteo', 80, 'rain', 'light'],
+    ['阵雪', 'open-meteo', 85, 'snow', 'light'],
+    ['Heavy freezing rain', 'weatherapi', 1201, 'rain', 'heavy'],
+    ['Moderate or heavy rain shower', 'weatherapi', 1243, 'rain', 'unknown'],
+    ['Moderate or heavy rain with thunder', 'weatherapi', 1276, 'rain', 'unknown'],
+    ['Light sleet', 'weatherapi', 1204, 'mixed', 'unknown'],
+  ];
+  for (const [condition, source, code, kind, intensity] of specialCases) {
+    const classification = classifyPrecipitation(condition, { source, code });
+    assert.equal(classification.precipitationKind, kind, condition);
+    assert.equal(classification.precipitationIntensity, intensity, condition);
+    assert.equal(classification.icon, kind === 'mixed' ? 'sleet' : null, condition);
+  }
+
+  const forecast = {
+    location: { name: 'Test', localtime: '2026-10-10 08:00', tz_id: 'Asia/Shanghai' },
+    current: { last_updated: '2026-10-10 08:00', temp_c: 12, condition: { text: 'Cloudy', code: 1006 }, is_day: 1 },
+    forecast: { forecastday: [{ date: '2026-10-10', day: { maxtemp_c: 18, mintemp_c: 9, condition: { text: 'Cloudy', code: 1006 } },
+      astro: { sunrise: '06:00 AM', sunset: '06:00 PM' }, hour: [{
+        time: '2026-10-10 08:00', temp_c: 12, condition: { text: 'Cloudy', code: 1006 }, chance_of_rain: 90,
+      }] }] },
+  };
+  const weather = formatWeatherApi(location, forecast);
+  assert.equal(weather.hourly24[0].precipitationKind, 'unknown');
+  assert.equal(weather.hourly24[0].precipitationIntensity, 'unknown');
+  assert.equal(weather.hourly24[0].icon, 'cloudy');
+  assert.equal(weather.hourly24[0].rainProbability, 90);
+  assert.equal(classifyPrecipitation('Rain').icon, null);
+  assert.equal(classifyPrecipitation('Snow').icon, null);
+  assert.deepEqual(classifyPrecipitation('天气状况未知', { rainAmount: 4 }), {
+    precipitationKind: 'rain', precipitationIntensity: 'unknown', icon: null,
+  });
+  assert.deepEqual(classifyPrecipitation('小雨', { source: 'weatherapi', code: 1225 }), {
+    precipitationKind: 'unknown', precipitationIntensity: 'unknown', icon: null,
+  });
+});
+
+test('weather card SVG sprite defines every icon used by ordinary forecast mapping', async () => {
+  const template = await readFile(new URL('../resources/weather.html', import.meta.url), 'utf8');
+  for (const name of [
+    'sun', 'moon', 'partly', 'night', 'rainy', 'snowy', 'rainy-light', 'rainy-moderate', 'rainy-heavy',
+    'snowy-light', 'snowy-moderate', 'snowy-heavy', 'foggy', 'thunderstorm', 'sleet', 'hail', 'cloudy',
+  ]) {
+    assert.match(template, new RegExp(`<symbol\\s+id="${name}"`), `missing SVG symbol: ${name}`);
+  }
 });
 
 test('switching weather sources fetches the selected provider and does not reuse another source result', async () => {

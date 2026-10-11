@@ -41,6 +41,7 @@ const WEATHER_IMAGE_CACHE_MAX_ITEMS = 40;
 const WEATHER_IMAGE_CACHE_MAX_BYTES = 64 * 1024 * 1024;
 const weatherImageCache = new Map();
 let weatherImageCacheBytes = 0;
+const weatherDescription = value => value?.displayCondition || value?.condition || '天气状况未知';
 const WARNING_IMAGE_CACHE_TTL = 5 * 60 * 1000;
 const WARNING_IMAGE_CACHE_MAX_ITEMS = 40;
 const WARNING_IMAGE_CACHE_MAX_BYTES = 64 * 1024 * 1024;
@@ -125,7 +126,7 @@ async function imageOfWeather(location, weatherSettings = null, theme = 'ocean',
   logger.warn('[天气插件] 天气卡片渲染失败，尝试文字版天气图片');
   return imageOfInfo(`${location.name}天气`, [
     ...weatherWarningLines(alertSnapshot.alerts, location, 1),
-    `${data.condition} · 当前 ${data.temperature}°C · 最高 ${data.high}°C / 最低 ${data.low}°C`,
+    `${weatherDescription(data)} · 当前 ${data.temperature}°C · 最高 ${data.high}°C / 最低 ${data.low}°C`,
     `风速 ${data.wind} 公里/小时 · 湿度 ${data.humidity}% · ${precipitationForecastText(data.hourly[0])}`,
     `能见度 ${data.visibility} 公里 · 空气质量 ${data.aqi}（${data.aqiNote}）`,
     `日出 ${data.sunrise} · 日落 ${data.sunset}`,
@@ -510,7 +511,7 @@ export class WeatherPanel extends plugin {
       if (!location) return sendInfo(e, '尚未设置默认城市', ['发送 #绑定城市 重庆，或使用 #生活指数 重庆 查询指定城市。']);
       const weather = await getWeather(location, fetch, await settingsStore.get());
       const lines = [
-        `${weather.city} · ${weather.condition} · ${weather.temperature}°C`,
+        `${weather.city} · ${weatherDescription(weather)} · ${weather.temperature}°C`,
         ...weather.lifeIndices.map(item => `${item.name}：${item.detail}`),
       ];
       return sendInfo(e, `${location.name}生活指数`, lines);
@@ -525,7 +526,7 @@ export class WeatherPanel extends plugin {
       if (!location) return sendInfo(e, '尚未设置默认城市', ['发送 #绑定城市 重庆，或使用 #24小时天气 重庆 查询指定城市。']);
       const weather = await getWeather(location, fetch, await settingsStore.get());
       const lines = weather.hourly24.map(hour =>
-        `${hour.time}　${hour.temp ?? '—'}°C ${hour.condition}　${precipitationForecastText(hour)}`);
+        `${hour.time}　${hour.temp ?? '—'}°C ${weatherDescription(hour)}　${precipitationForecastText(hour)}`);
       return sendInfo(e, `${location.name}未来24小时`, lines);
     } catch (error) { return sendError(e, error); }
   }
@@ -545,7 +546,7 @@ export class WeatherPanel extends plugin {
       }));
       const lines = results.map(({ location, weather }) => {
         const today = weather.days[0];
-        return `${location.name}：${weather.condition} ${weather.temperature}°C · 高 ${today.high}° / 低 ${today.low}° · ${precipitationForecastText(today)}`;
+        return `${location.name}：${weatherDescription(weather)} ${weather.temperature}°C · 高 ${today.high}° / 低 ${today.low}° · ${precipitationForecastText(today)}`;
       });
       return sendInfo(e, '城市天气对比', lines);
     } catch (error) { return sendError(e, error); }
@@ -880,7 +881,7 @@ export class WeatherPanel extends plugin {
             const label = kind === 'evening' ? '明天' : '今天';
             const title = kind === 'evening' ? '天气晚报' : '天气早报';
             const image = segment.image(await imageOfInfo(`${location.name}${title}`, [
-              `${label}：${day.condition} · ${day.low ?? '—'}°C 至 ${day.high ?? '—'}°C`,
+              `${label}：${weatherDescription(day)} · ${day.low ?? '—'}°C 至 ${day.high ?? '—'}°C`,
               precipitationForecastText(day),
               `风速 ${weather.wind} 公里/小时 · 紫外线 ${day.uv ?? weather.uv}`, `日出 ${weather.sunrise} · 日落 ${weather.sunset}`,
             ]));

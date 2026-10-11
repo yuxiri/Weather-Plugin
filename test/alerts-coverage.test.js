@@ -192,6 +192,20 @@ test('expired and cancelled alerts are removed before display', () => {
   assert.deepEqual(normalized, []);
 });
 
+test('road icing and dust storm retain their alert mappings with distinct icon drawings', () => {
+  const alerts = normalizeWeatherAlerts([
+    { event: '沙尘暴黄色预警', id: 'dust-icon', expires: '2026-10-11T00:00:00Z' },
+    { event: '道路结冰橙色预警', id: 'ice-icon', expires: '2026-10-11T00:00:00Z' },
+  ], { source: 'msn', location: { latitude: 39, longitude: 116 } }, Date.parse('2026-10-10T00:00:00Z'));
+  assert.deepEqual(alerts.map(alert => alert.kind), ['沙尘暴', '道路结冰']);
+
+  const image = weatherWarningsView(liaoning, { alerts });
+  assert.match(image.warningCardsHtml, /<circle cx="19" cy="5" r="1\.25"/);
+  assert.match(image.warningCardsHtml, /<circle cx="21\.5" cy="9" r="\.95"/);
+  assert.match(image.warningCardsHtml, /m6 21 4-18h4l4 18M12 5v3m0 4v3m0 4v1/);
+  assert.doesNotMatch(image.warningCardsHtml, /M12 3v18M4\.2 7\.5l15\.6 9/);
+});
+
 test('warning image labels partial no-alert results and caps long lists with a remainder count', () => {
   const partial = weatherWarningsView(liaoning, {
     status: 'partial', alerts: [], fetchedAt: new Date().toISOString(),
