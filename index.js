@@ -329,7 +329,11 @@ async function sendToChat(target, message) {
   const result = target.type === 'group'
     ? await Bot.sendGroupMsg(target.botId, target.targetId, message)
     : await Bot.sendFriendMsg(target.botId, target.targetId, message);
-  if (result === false || result == null) throw new Error('发送接口没有确认成功');
+  // QQBot reports send failures in a resolved aggregate instead of rejecting.
+  const aggregate = Array.isArray(result?.message_id) && Array.isArray(result?.data) && Array.isArray(result?.error);
+  if (result === false || result == null || (aggregate && !result.message_id.length && !result.data.length)) {
+    throw new Error('发送接口没有确认成功');
+  }
 }
 
 function warningTime(value, timezone) {
